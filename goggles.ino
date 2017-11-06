@@ -24,31 +24,50 @@ Software Libraries:
 #include <Adafruit_DotStar.h>
 #include <Adafruit_DotStarMatrix.h>
 
-#define MATRIX_SIZE     8
-#define LED_DATA_PIN    4
-#define LED_CLOCK_PIN   5
+#include "bitmap/heart.h"
+
+#define MATRIX_SIZE         8
+#define MATRIX_DATA_PIN     4
+#define MATRIX_CLOCK_PIN    5
+
+#define LED_STRIP_PIXELS    16
+#define LED_STRIP_DATA_PIN  2
+#define LED_STRIP_CLOCK_PIN 3
 
 Adafruit_DotStarMatrix matrix = Adafruit_DotStarMatrix(
                                     MATRIX_SIZE,
                                     MATRIX_SIZE,
                                     2,
                                     1,
-                                    LED_DATA_PIN,
-                                    LED_CLOCK_PIN,
+                                    MATRIX_DATA_PIN,
+                                    MATRIX_CLOCK_PIN,
                                     DS_MATRIX_TOP + DS_MATRIX_RIGHT +
                                     DS_MATRIX_COLUMNS + DS_MATRIX_PROGRESSIVE,
                                     DOTSTAR_BRG
                                 );
+Adafruit_DotStar strip = Adafruit_DotStar(LED_STRIP_PIXELS, LED_STRIP_DATA_PIN, LED_STRIP_CLOCK_PIN)
+
+void setupMatrix() {
+    matrix.begin();
+    matrix.setTextWrap(false);
+    matrix.setBrightness(16);
+    matrix.fillScreen(0);
+    matrix.show();
+}
+
+void setupStrip() {
+    strip.begin();
+    strip.setBrightness(16);
+    strip.clear();
+    strip.show();
+}
 
 void setup() {
-  // Initialize Matrix
-  matrix.begin();
-  matrix.setTextWrap(false);
-  matrix.setBrightness(36);
-  matrix.fillScreen(0);
+    setupMatrix();
+    setupStrip();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+    matrix.drawXBitmap(0, 0, heart, 8, 8, 0xFF0000);
+    matrix.show();
 }
