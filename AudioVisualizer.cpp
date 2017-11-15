@@ -4,7 +4,7 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL     0x00
-#define FFT_SAMPLES     128
+#define FFT_SAMPLES     256
 #define NOISE_THRESHOLD 12
 
 float32_t samples[FFT_SAMPLES];
@@ -63,11 +63,10 @@ void AudioVisualizer::loop() {
         return;
     }
 
-    NVIC_ClearPendingIRQ(ADC_IRQn);
-    NVIC_DisableIRQ(ADC_IRQn);
+    maxValue = 0;
 
-    arm_cfft_f32(&arm_cfft_sR_f32_len64, samples, 0, 1);
-    arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES);
+    arm_cfft_f32(&arm_cfft_sR_f32_len128, samples, 0, 1);
+    arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES / 2);
     arm_max_f32(fftOutput, FFT_SAMPLES, &maxValue, &testIndex);
 
     sampling = true;
@@ -97,7 +96,7 @@ void initADC() {
     // Set the clock prescaler (48MHz / 64 / 13(cycles per conversion) = ~57kHz)
     // Set 12bit resolution
     // Set free running mode (a new conversion will begin as a previous one completes)
-    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV256 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
+    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV64 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
     WAIT_ADC_SYNC;
 
     // Enable Result Ready Interrupt
@@ -144,6 +143,8 @@ void ADC_Handler(void) {
 
     if (++samplePosition >= FFT_SAMPLES) {
         sampling = false;
+        NVIC_ClearPendingIRQ(ADC_IRQn);
+        NVIC_DisableIRQ(ADC_IRQn);
     }
 
     ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
