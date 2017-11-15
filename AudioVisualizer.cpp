@@ -1,3 +1,9 @@
+/**
+ *  Sampling frequency              ~14.4kHz
+ *  Maximum frequency detectable    ~7.2kHz
+ *  Frequency per bin               ~56Hz
+ */
+
 #include "AudioVisualizer.h"
 
 #define WAIT_ADC_SYNC   while (ADC->STATUS.bit.SYNCBUSY) {}
@@ -93,10 +99,10 @@ void initADC() {
     ADC->REFCTRL.bit.REFSEL = ADC_REFCTRL_REFSEL_AREFA_Val;
     WAIT_ADC_SYNC;
 
-    // Set the clock prescaler (48MHz / 64 / 13(cycles per conversion) = ~57kHz)
+    // Set the clock prescaler (48MHz / 256 / 13(cycles per conversion) = ~14.4kHz)
     // Set 12bit resolution
     // Set free running mode (a new conversion will begin as a previous one completes)
-    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV64 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
+    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV256 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
     WAIT_ADC_SYNC;
 
     // Enable Result Ready Interrupt
