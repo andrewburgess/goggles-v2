@@ -1,5 +1,6 @@
 #include <Adafruit_DotStar.h>
 
+#include "AudioVisualizer.h"
 #include "Matrix.h"
 #include "gamma.h"
 #include "graphics.h"
@@ -13,7 +14,6 @@ Matrix::Matrix()
     : Adafruit_GFX(MATRIX_SIZE * 2, MATRIX_SIZE),
       Adafruit_DotStar(MATRIX_SIZE * 2 * MATRIX_SIZE, MATRIX_DATA_PIN, MATRIX_CLOCK_PIN, DOTSTAR_BRG)
 {
-
 }
 
 // Expand 16-bit input color (Adafruit_GFX colorspace) to 24-bit (DotStar)
@@ -33,10 +33,12 @@ uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
                       (blue >> 3);
 }
 
-void Matrix::initialize() {
+void Matrix::initialize(AudioVisualizer pVisualizer) {
+    visualizer = pVisualizer;
+
     begin();
     setTextWrap(false);
-    setBrightness(36);
+    setBrightness(24);
     fillScreen(0);
     show();
 
@@ -90,7 +92,20 @@ void Matrix::fillScreen(uint16_t color)
 }
 
 void Matrix::loop() {
-    if (millis() - lastTime < FRAME_DURATION) {
+    clear();
+
+    float32_t *output = visualizer.getOutput();
+    int32_t count = visualizer.getSampleCount();
+    for (int i = 0; i < count; i++) {
+        int32_t red = min(255, 5 + ((output[i] / 2000) * 255));
+        drawPixel(i / 16, i % 8, Matrix::Color(red, 0, 0));
+    }
+
+    show();
+}
+
+void animation() {
+    /*if (millis() - lastTime < FRAME_DURATION) {
         return;
     }
 
@@ -103,5 +118,5 @@ void Matrix::loop() {
     drawPicture(FRAMES[frameIndex]);
     show();
 
-    lastTime = millis();
+    lastTime = millis();*/
 }

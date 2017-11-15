@@ -29,21 +29,16 @@ AudioVisualizer visualizer = AudioVisualizer();
 Matrix matrix = Matrix();
 Strip strip = Strip();
 
-void initializeMicrophone() {
-
-}
-
 void setup() {
     while (!Serial) { delay(10); }
-
-    Serial.begin(9600);
-    matrix.initialize();
-    strip.initialize();
-
+    Serial.begin(115200);
     visualizer.initialize();
+    matrix.initialize(visualizer);
+    strip.initialize();
 }
 
 void loop() {
-    matrix.clear();
-    strip.clear();
+    visualizer.loop();
+    matrix.loop();
+    //strip.loop();
 }

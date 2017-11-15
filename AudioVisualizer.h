@@ -4,19 +4,20 @@
 #define ARM_MATH_CM0
 #include <Arduino.h>
 #include <arm_math.h>
+#include <arm_const_structs.h>
 
-typedef void (*ADC_CALLBACK) (void);
+void disableADC();
+void initADC();
+void resetADC();
 
 class AudioVisualizer {
 public:
     AudioVisualizer();
 
     void initialize();
-
-private:
-    void initADC();
-    void onADCReady();
-    void resetADC();
+    void loop();
+    float32_t* getOutput();
+    int32_t getSampleCount();
 };
 
 #endif
