@@ -4,24 +4,30 @@
  *  Frequency per bin               ~56Hz
  */
 
+#include <math.h>
+
 #include "AudioVisualizer.h"
 
 #define WAIT_ADC_SYNC   while (ADC->STATUS.bit.SYNCBUSY) {}
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
-#define ADC_CHANNEL     0x00
-#define FFT_SAMPLES     256
-#define NOISE_THRESHOLD 12
+#define ADC_CHANNEL             0x00
+#define FFT_SAMPLES             256
+#define MICROPHONE_LOW          310
+#define MICROPHONE_MIDPOINT     1551
+#define MICROPHONE_HIGH         2793
+#define NOISE_THRESHOLD         12
 
 float32_t samples[FFT_SAMPLES];
 float32_t fftOutput[FFT_SAMPLES / 2];
+float32_t windowOutput[FFT_SAMPLES / 2];
 volatile bool sampling = false;
 volatile int samplePosition = 0;
-float32_t maxValue;
-uint32_t testIndex;
+float32_t maximumValue;
+uint32_t maximumIndex;
 
 void serialDebugFFT() {
-    for (int i = 0; i < FFT_SAMPLES/2; i++) {
+    for (int i = 0; i < 32; i++) {
         Serial.print(fftOutput[i]);
         Serial.print("\t");
     }
@@ -31,14 +37,15 @@ void serialDebugFFT() {
 
 void processingDebugFFT() {
     Serial.write(255);
-
     for (int i = 0; i < FFT_SAMPLES/2; i++) {
-        Serial.write(fftOutput[i]);
+        Serial.write((byte)(round((fftOutput[i] / maximumValue) * 254)));
     }
 }
 
 AudioVisualizer::AudioVisualizer() {
-
+    for (int i = 0; i < FFT_SAMPLES / 2; i++) {
+        windowOutput[i] = 0.5 - (0.5 * arm_cos_f32((2.0 * PI * i) / (FFT_SAMPLES / 2 - 1)));
+    }
 }
 
 /**
@@ -56,12 +63,20 @@ void AudioVisualizer::initialize() {
     initADC();
 }
 
+uint32_t AudioVisualizer::getMaximumIndex() {
+    return maximumIndex;
+}
+
+float32_t AudioVisualizer::getMaximumValue() {
+    return 8;
+}
+
 float32_t* AudioVisualizer::getOutput() {
     return fftOutput;
 }
 
 int32_t AudioVisualizer::getSampleCount() {
-    return FFT_SAMPLES / 2;
+    return FFT_SAMPLES / 2 / 2; // Output is duplicated
 }
 
 void AudioVisualizer::loop() {
@@ -69,11 +84,11 @@ void AudioVisualizer::loop() {
         return;
     }
 
-    maxValue = 0;
-
+    window(samples);
     arm_cfft_f32(&arm_cfft_sR_f32_len128, samples, 0, 1);
     arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES / 2);
-    arm_max_f32(fftOutput, FFT_SAMPLES, &maxValue, &testIndex);
+
+    serialDebugFFT();
 
     sampling = true;
     samplePosition = 0;
@@ -99,10 +114,10 @@ void initADC() {
     ADC->REFCTRL.bit.REFSEL = ADC_REFCTRL_REFSEL_AREFA_Val;
     WAIT_ADC_SYNC;
 
-    // Set the clock prescaler (48MHz / 256 / 13(cycles per conversion) = ~14.4kHz)
+    // Set the clock prescaler (48MHz / 512 / 13(cycles per conversion) = ~7.2kHz)
     // Set 12bit resolution
     // Set free running mode (a new conversion will begin as a previous one completes)
-    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV256 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
+    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV512 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
     WAIT_ADC_SYNC;
 
     // Enable Result Ready Interrupt
@@ -130,6 +145,12 @@ void resetADC() {
     WAIT_ADC_RESET;
 }
 
+void window(float32_t *samples) {
+    for (int i = 0; i < FFT_SAMPLES / 2; i += 2) {
+        samples[i] *= windowOutput[i / 2];
+    }
+}
+
 void ADC_Handler(void) {
     if (!sampling || samplePosition >= FFT_SAMPLES) {
         ADC->INTFLAG.reg = ADC_INTFLAG_RESRDY;
@@ -141,9 +162,9 @@ void ADC_Handler(void) {
     // Read the value from the result register, then subtract 1.56V from the
     // reading
     float32_t value = (float32_t)ADC->RESULT.reg;
-    value = value - 1560;
+    value = (value - MICROPHONE_LOW) * (1 - -1) / (MICROPHONE_HIGH - MICROPHONE_LOW) + -1;
 
-    samples[samplePosition] = (float32_t)value;
+    samples[samplePosition] = value;
     // Odd values are complex, set to 0
     samples[++samplePosition] = 0;
 

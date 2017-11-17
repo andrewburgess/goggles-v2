@@ -9,6 +9,7 @@
 void disableADC();
 void initADC();
 void resetADC();
+void window(float32_t *samples);
 
 class AudioVisualizer {
 public:
@@ -16,6 +17,8 @@ public:
 
     void initialize();
     void loop();
+    uint32_t getMaximumIndex();
+    float32_t getMaximumValue();
     float32_t* getOutput();
     int32_t getSampleCount();
 };
