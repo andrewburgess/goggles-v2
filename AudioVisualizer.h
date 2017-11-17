@@ -6,6 +6,8 @@
 #include <arm_math.h>
 #include <arm_const_structs.h>
 
+#include "constants.h"
+
 void disableADC();
 void initADC();
 void resetADC();
@@ -20,7 +22,6 @@ public:
     uint32_t getMaximumIndex();
     float32_t getMaximumValue();
     float32_t* getOutput();
-    int32_t getSampleCount();
 };
 
 #endif

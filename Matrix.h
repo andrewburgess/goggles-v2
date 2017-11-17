@@ -5,6 +5,7 @@
 #include <Adafruit_DotStar.h>
 
 #include "AudioVisualizer.h"
+#include "constants.h"
 
 #define MATRIX_SIZE         8
 #define MATRIX_DATA_PIN     13

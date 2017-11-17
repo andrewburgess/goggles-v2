@@ -96,8 +96,7 @@ void Matrix::loop() {
 
     float32_t *output = visualizer.getOutput();
     float32_t maximum = visualizer.getMaximumValue();
-    int32_t count = visualizer.getSampleCount();
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < FFT_SAMPLES / 2; i++) {
         int32_t red = min(255, 0 + ((output[i] / maximum) * 255));
         drawPixel(i % 8, i / 8, Matrix::Color(red, 0, 0));
     }

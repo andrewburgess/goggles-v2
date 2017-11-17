@@ -12,15 +12,13 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
-#define FFT_SAMPLES             256
 #define MICROPHONE_LOW          310
 #define MICROPHONE_MIDPOINT     1551
 #define MICROPHONE_HIGH         2793
-#define NOISE_THRESHOLD         12
 
-float32_t samples[FFT_SAMPLES];
-float32_t fftOutput[FFT_SAMPLES / 2];
-float32_t windowOutput[FFT_SAMPLES / 2];
+float32_t samples[FFT_SAMPLES * 2];
+float32_t fftOutput[FFT_SAMPLES];
+float32_t windowOutput[FFT_SAMPLES];
 volatile bool sampling = false;
 volatile int samplePosition = 0;
 float32_t maximumValue;
@@ -37,13 +35,13 @@ void serialDebugFFT() {
 
 void processingDebugFFT() {
     Serial.write(255);
-    for (int i = 0; i < FFT_SAMPLES/2; i++) {
+    for (int i = 0; i < FFT_SAMPLES; i++) {
         Serial.write((byte)(round((fftOutput[i] / maximumValue) * 254)));
     }
 }
 
 AudioVisualizer::AudioVisualizer() {
-    for (int i = 0; i < FFT_SAMPLES / 2; i++) {
+    for (int i = 0; i < FFT_SAMPLES; i++) {
         windowOutput[i] = 0.5 - (0.5 * arm_cos_f32((2.0 * PI * i) / (FFT_SAMPLES / 2 - 1)));
     }
 }
@@ -75,10 +73,6 @@ float32_t* AudioVisualizer::getOutput() {
     return fftOutput;
 }
 
-int32_t AudioVisualizer::getSampleCount() {
-    return FFT_SAMPLES / 2 / 2; // Output is duplicated
-}
-
 void AudioVisualizer::loop() {
     if (sampling) {
         return;
@@ -86,9 +80,9 @@ void AudioVisualizer::loop() {
 
     window(samples);
     arm_cfft_f32(&arm_cfft_sR_f32_len128, samples, 0, 1);
-    arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES / 2);
-
-    serialDebugFFT();
+    arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES);
+    Serial.println(FFT_SAMPLES);
+    //serialDebugFFT();
 
     sampling = true;
     samplePosition = 0;
@@ -146,7 +140,7 @@ void resetADC() {
 }
 
 void window(float32_t *samples) {
-    for (int i = 0; i < FFT_SAMPLES / 2; i += 2) {
+    for (int i = 0; i < FFT_SAMPLES; i += 2) {
         samples[i] *= windowOutput[i / 2];
     }
 }
@@ -164,9 +158,9 @@ void ADC_Handler(void) {
     float32_t value = (float32_t)ADC->RESULT.reg;
     value = (value - MICROPHONE_LOW) * (1 - -1) / (MICROPHONE_HIGH - MICROPHONE_LOW) + -1;
 
-    samples[samplePosition] = value;
+    samples[samplePosition * 2] = value;
     // Odd values are complex, set to 0
-    samples[++samplePosition] = 0;
+    samples[samplePosition * 2 + 1] = 0;
 
     if (++samplePosition >= FFT_SAMPLES) {
         sampling = false;

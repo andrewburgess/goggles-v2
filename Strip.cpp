@@ -12,32 +12,32 @@ Strip::Strip()
 }
 
 // Downgrade 24-bit color to 16-bit (add reverse gamma lookup here?)
-uint16_t Strip::Color(uint8_t red, uint8_t green, uint8_t blue)
+uint32_t Strip::Color(uint8_t red, uint8_t green, uint8_t blue)
 {
-    return ((uint16_t)(red & 0xF8) << 8) |
-           ((uint16_t)(green & 0xFC) << 3) |
-                      (blue >> 3);
+    return ((uint32_t)green << 16) | ((uint32_t)red << 8) | blue;
 }
 
 uint16_t Strip::colorWheel(uint8_t position) {
     position = 255 - position;
     if(position < 85)
     {
-        return Strip::Color(0, 255 - position * 3, position * 3);
+        return Strip::Color(255 - position * 3, 0, position * 3);
     }
     else if(position < 170)
     {
         position -= 85;
-        return Strip::Color(position * 3, 0, 255 - position * 3);
+        return Strip::Color(0, position * 3, 255 - position * 3);
     }
     else
     {
         position -= 170;
-        return Strip::Color(255 - position * 3, position * 3, 0);
+        return Strip::Color(position * 3, 255 - position * 3, 0);
     }
 }
 
-void Strip::initialize() {
+void Strip::initialize(AudioVisualizer pVisualizer) {
+    visualizer = pVisualizer;
+
     begin();
     setBrightness(128);
     clear();

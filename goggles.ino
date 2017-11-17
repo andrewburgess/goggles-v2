@@ -30,15 +30,14 @@ Matrix matrix = Matrix();
 Strip strip = Strip();
 
 void setup() {
-    while (!Serial) { delay(10); }
     Serial.begin(115200);
     visualizer.initialize();
     matrix.initialize(visualizer);
-    strip.initialize();
+    strip.initialize(visualizer);
 }
 
 void loop() {
     visualizer.loop();
     matrix.loop();
-    //strip.loop();
+    strip.loop();
 }
