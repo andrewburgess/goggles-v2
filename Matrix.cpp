@@ -28,8 +28,8 @@ static uint32_t expandColor(uint16_t color)
 // Downgrade 24-bit color to 16-bit (add reverse gamma lookup here?)
 uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
 {
-    return ((uint16_t)(red & 0xF8) << 8) |
-           ((uint16_t)(green & 0xFC) << 3) |
+    return ((uint16_t)(green & 0xF8) << 8) |
+           ((uint16_t)(red & 0xFC) << 3) |
                       (blue >> 3);
 }
 
@@ -71,8 +71,8 @@ void Matrix::drawPicture(const uint8_t picture[]) {
     uint8_t green;
     uint8_t blue;
     for (uint8_t i = 0; i < MATRIX_SIZE * MATRIX_SIZE; i++) {
-        green = pgm_read_byte(&picture[i * 3]);
-        red = pgm_read_byte(&picture[i * 3 + 1]);
+        red = pgm_read_byte(&picture[i * 3]);
+        green = pgm_read_byte(&picture[i * 3 + 1]);
         blue = pgm_read_byte(&picture[i * 3 + 2]);
         drawPixel(i % MATRIX_SIZE, i / MATRIX_SIZE, Matrix::Color(red, green, blue));
         drawPixel(i % MATRIX_SIZE + MATRIX_SIZE, i / MATRIX_SIZE, Matrix::Color(red, green, blue));
@@ -95,10 +95,11 @@ void Matrix::loop() {
     clear();
 
     float32_t *output = visualizer.getOutput();
+    float32_t maximum = visualizer.getMaximumValue();
     int32_t count = visualizer.getSampleCount();
     for (int i = 0; i < count; i++) {
-        int32_t red = min(255, 5 + ((output[i] / 2000) * 255));
-        drawPixel(i / 16, i % 8, Matrix::Color(red, 0, 0));
+        int32_t red = min(255, 0 + ((output[i] / maximum) * 255));
+        drawPixel(i % 8, i / 8, Matrix::Color(red, 0, 0));
     }
 
     show();
