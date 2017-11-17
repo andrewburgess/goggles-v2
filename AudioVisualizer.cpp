@@ -12,9 +12,9 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
-#define MICROPHONE_LOW          310
-#define MICROPHONE_MIDPOINT     1551
-#define MICROPHONE_HIGH         2793
+#define MICROPHONE_LOW          310     // Mapping 0.25V/3.3V to 0-4095 ADC
+#define MICROPHONE_MIDPOINT     1551    // Mapping 1.25V/3.3V to 0-4095 ADC
+#define MICROPHONE_HIGH         2793    // Mapping 2.25V/3.3V to 0-4095 ADC
 
 float32_t samples[FFT_SAMPLES * 2];
 float32_t fftOutput[FFT_SAMPLES];
@@ -152,10 +152,11 @@ void ADC_Handler(void) {
         return;
     }
 
-    // Read the value from the result register, then subtract 1.56V from the
-    // reading
+    // Read the value from the result register, then map the resulting value to the
+    // expected microphone values
+    // Microphone has DC bias of 1.25V and 2Vpp. VCC is 3.3V, reading is 12b (so 0-4095)
     float32_t value = (float32_t)ADC->RESULT.reg;
-    value = (value - MICROPHONE_LOW) * (1 - -1) / (MICROPHONE_HIGH - MICROPHONE_LOW) + -1;
+    value = (value - MICROPHONE_LOW) * (2) / (MICROPHONE_HIGH - MICROPHONE_LOW) - 1;
 
     samples[samplePosition * 2] = value;
     // Odd values are complex, set to 0
