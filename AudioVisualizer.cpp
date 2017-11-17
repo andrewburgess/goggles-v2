@@ -81,7 +81,6 @@ void AudioVisualizer::loop() {
     window(samples);
     arm_cfft_f32(&arm_cfft_sR_f32_len128, samples, 0, 1);
     arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES);
-    Serial.println(FFT_SAMPLES);
     //serialDebugFFT();
 
     sampling = true;

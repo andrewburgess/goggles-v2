@@ -21,10 +21,13 @@ public:
 
 private:
     AudioVisualizer visualizer;
+    uint8_t previousBeat;
     long lastTime;
     uint8_t position;
     int head;
     int tail;
+
+    void chase();
 };
 
 #endif

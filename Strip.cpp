@@ -3,6 +3,7 @@
 #include "Strip.h"
 
 #define FRAME_DURATION 20
+#define BEAT_THRESHOLD 5
 
 Strip::Strip()
     : Adafruit_DotStar(LED_STRIP_PIXELS, LED_STRIP_DATA_PIN, LED_STRIP_CLOCK_PIN, DOTSTAR_BRG)
@@ -39,7 +40,7 @@ void Strip::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
 
     begin();
-    setBrightness(128);
+    setBrightness(32);
     clear();
     show();
 
@@ -47,6 +48,32 @@ void Strip::initialize(AudioVisualizer pVisualizer) {
 }
 
 void Strip::loop() {
+    float32_t *output = visualizer.getOutput();
+
+    // Care only about the first two bins
+    Serial.print(output[0]);
+    Serial.print("\t");
+    Serial.print(output[1]);
+    Serial.print("\n");
+
+    previousBeat = max(32, previousBeat - 40);
+
+    for (int i = 0; i < LED_STRIP_PIXELS; i++) {
+        setPixelColor(i, Strip::Color(255, 0, 0));
+    }
+
+    if (output[1] > BEAT_THRESHOLD) {
+        previousBeat = min(220, (previousBeat + 180 + round(output[1]));
+    }
+
+    setBrightness(previousBeat);
+
+    show();
+
+    position++;
+}
+
+void Strip::chase() {
     if (millis() - lastTime < FRAME_DURATION) {
         return;
     }
