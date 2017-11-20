@@ -173,10 +173,11 @@ void ADC_Handler(void) {
         return;
     }
 
-    // Read the value from the result register, then subtract 1.56V from the
-    // reading
+    // Read the value from the result register, then map the resulting value to the
+    // expected microphone values
+    // Microphone has DC bias of 1.25V and 2Vpp. VCC is 3.3V, reading is 12b (so 0-4095)
     float32_t value = (float32_t)ADC->RESULT.reg;
-    value = (value - MICROPHONE_LOW) * (1 - -1) / (MICROPHONE_HIGH - MICROPHONE_LOW) + -1;
+    value = (value - MICROPHONE_LOW) * (2) / (MICROPHONE_HIGH - MICROPHONE_LOW) - 1;
 
     samples[samplePosition * 2] = value;
     // Odd values are complex, set to 0
