@@ -12,17 +12,20 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
+#define SMOOTHING               0.75
 #define MICROPHONE_LOW          310
 #define MICROPHONE_MIDPOINT     1551
 #define MICROPHONE_HIGH         2793
 
 float32_t samples[FFT_SAMPLES * 2];
 float32_t fftOutput[FFT_SAMPLES];
+float32_t fftSmoothed[FFT_SAMPLES / 2];
 float32_t windowOutput[FFT_SAMPLES];
 volatile bool sampling = false;
 volatile int samplePosition = 0;
 float32_t maximumValue;
 uint32_t maximumIndex;
+float32_t averageValue;
 
 void serialDebugFFT() {
     for (int i = 0; i < 32; i++) {
@@ -61,16 +64,28 @@ void AudioVisualizer::initialize() {
     initADC();
 }
 
+float32_t AudioVisualizer::getDB(float32_t sample) {
+    return 20 * log10(abs(sample));
+}
+
+float32_t AudioVisualizer::getAverageValue() {
+    return averageValue;
+}
+
 uint32_t AudioVisualizer::getMaximumIndex() {
     return maximumIndex;
 }
 
 float32_t AudioVisualizer::getMaximumValue() {
-    return 8;
+    return maximumValue;
 }
 
 float32_t* AudioVisualizer::getOutput() {
     return fftOutput;
+}
+
+float32_t* AudioVisualizer::getSmoothedOutput() {
+    return fftSmoothed;
 }
 
 void AudioVisualizer::loop() {
@@ -80,7 +95,13 @@ void AudioVisualizer::loop() {
 
     window(samples);
     arm_cfft_f32(&arm_cfft_sR_f32_len128, samples, 0, 1);
-    arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES);
+    arm_cmplx_mag_squared_f32(samples, fftOutput, FFT_SAMPLES);
+    for (int i = 0; i < FFT_SAMPLES / 2; i++) {
+        fftOutput[i] = 20 * log10(fftOutput[i]);    // Convert to dB scale
+        fftSmoothed[i] = max(fftOutput[i], SMOOTHING * fftSmoothed[i] + ((1 - SMOOTHING) * fftOutput[i]));
+    }
+    arm_max_f32(fftOutput, FFT_SAMPLES, &maximumValue, &maximumIndex);
+    arm_mean_f32(fftOutput, FFT_SAMPLES, &averageValue);
     //serialDebugFFT();
 
     sampling = true;
@@ -107,10 +128,10 @@ void initADC() {
     ADC->REFCTRL.bit.REFSEL = ADC_REFCTRL_REFSEL_AREFA_Val;
     WAIT_ADC_SYNC;
 
-    // Set the clock prescaler (48MHz / 512 / 13(cycles per conversion) = ~7.2kHz)
+    // Set the clock prescaler (48MHz / 256 / 13(cycles per conversion) = ~14.4kHz)
     // Set 12bit resolution
     // Set free running mode (a new conversion will begin as a previous one completes)
-    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV512 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
+    ADC->CTRLB.reg = ADC_CTRLB_PRESCALER_DIV256 | ADC_CTRLB_RESSEL_12BIT | ADC_CTRLB_FREERUN;
     WAIT_ADC_SYNC;
 
     // Enable Result Ready Interrupt

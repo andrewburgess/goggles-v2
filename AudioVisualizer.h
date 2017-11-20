@@ -19,9 +19,12 @@ public:
 
     void initialize();
     void loop();
+    float32_t getDB(float32_t sample);
+    float32_t getAverageValue();
     uint32_t getMaximumIndex();
     float32_t getMaximumValue();
     float32_t* getOutput();
+    float32_t* getSmoothedOutput();
 };
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef _STRIP_H_
 #define _STRIP_H_
 
+#include <QList.h>
+#include "QList.cpp"
 #include <Adafruit_DotStar.h>
 
 #include "AudioVisualizer.h"
@@ -21,7 +23,8 @@ public:
 
 private:
     AudioVisualizer visualizer;
-    uint8_t previousBeat;
+    uint8_t brightness;
+    QList<float32_t> previousReads;
     long lastTime;
     uint8_t position;
     int head;

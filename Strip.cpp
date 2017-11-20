@@ -3,11 +3,11 @@
 #include "Strip.h"
 
 #define FRAME_DURATION 20
-#define BEAT_THRESHOLD 5
 
 Strip::Strip()
     : Adafruit_DotStar(LED_STRIP_PIXELS, LED_STRIP_DATA_PIN, LED_STRIP_CLOCK_PIN, DOTSTAR_BRG)
 {
+    brightness = 16;
     head = 0;
     tail = -8;
 }
@@ -49,24 +49,44 @@ void Strip::initialize(AudioVisualizer pVisualizer) {
 
 void Strip::loop() {
     float32_t *output = visualizer.getOutput();
+    float32_t average = visualizer.getAverageValue();
+    float32_t maximum = visualizer.getMaximumValue();
 
-    // Care only about the first two bins
-    Serial.print(output[0]);
-    Serial.print("\t");
-    Serial.print(output[1]);
-    Serial.print("\n");
-
-    previousBeat = max(32, previousBeat - 40);
+    float32_t reads[previousReads.size()];
+    for (int i = 0; i < previousReads.size(); i++) {
+        reads[i] = previousReads.at(i);
+    }
+    float32_t avg;
+    arm_mean_f32(reads, previousReads.size(), &avg);
 
     for (int i = 0; i < LED_STRIP_PIXELS; i++) {
         setPixelColor(i, Strip::Color(255, 0, 0));
     }
 
-    if (output[1] > BEAT_THRESHOLD) {
-        previousBeat = min(220, (previousBeat + 180 + round(output[1]));
+    float32_t sample = output[1];
+
+    Serial.print(output[0]);
+    Serial.print("\t");
+    Serial.print(sample);
+    Serial.print("\t");
+    Serial.print(average);
+    Serial.print("\t");
+    Serial.print(maximum);
+    Serial.print("\n");
+
+    if (sample - abs(avg) > 10) {
+        brightness = min(200, 128 + (sample));
+    } else {
+        brightness = max(16, brightness - 30);
+
+        if (previousReads.size() == 16) {
+            previousReads.pop_front();
+        }
+
+        previousReads.push_back(sample);
     }
 
-    setBrightness(previousBeat);
+    setBrightness(brightness);
 
     show();
 

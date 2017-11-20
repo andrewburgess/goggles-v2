@@ -94,10 +94,10 @@ void Matrix::fillScreen(uint16_t color)
 void Matrix::loop() {
     clear();
 
-    float32_t *output = visualizer.getOutput();
+    float32_t *output = visualizer.getSmoothedOutput();
     float32_t maximum = visualizer.getMaximumValue();
     for (int i = 0; i < FFT_SAMPLES / 2; i++) {
-        int32_t red = min(255, 0 + ((output[i] / maximum) * 255));
+        int32_t red = max(0, min(255, 0 + ((output[i] / maximum) * 255)));
         drawPixel(i % 8, i / 8, Matrix::Color(red, 0, 0));
     }
 
