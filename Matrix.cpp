@@ -95,10 +95,18 @@ void Matrix::loop() {
     clear();
 
     float32_t *output = visualizer.getSmoothedOutput();
-    float32_t maximum = visualizer.getMaximumValue();
-    for (int i = 0; i < FFT_SAMPLES / 2; i++) {
-        int32_t red = max(0, min(255, 0 + ((output[i] / maximum) * 255)));
-        drawPixel(i % 8, i / 8, Matrix::Color(red, 0, 0));
+    float32_t maximum = visualizer.getAverageMaximumValue();
+    if (maximum == 0) {
+        maximum = 100;
+    }
+    for (int i = 0; i < 16; i++) {
+        float32_t value = 8 - (output[i] / maximum) * 8;
+        if (value > 7) {
+            drawLine(i, 0, i, 7, 0);
+            continue;
+        }
+
+        drawLine(i, max(0, round(value) - 1), i, 7, Matrix::Color(255, 0, 0));
     }
 
     show();

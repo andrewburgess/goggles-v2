@@ -12,23 +12,36 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
-#define SMOOTHING               0.75
+#define SMOOTHING               0.45
 #define MICROPHONE_LOW          310
 #define MICROPHONE_MIDPOINT     1551
 #define MICROPHONE_HIGH         2793
+#define MAXIMUMS_TO_KEEP        8
 
 float32_t samples[FFT_SAMPLES * 2];
 float32_t fftOutput[FFT_SAMPLES];
 float32_t fftSmoothed[FFT_SAMPLES / 2];
 float32_t windowOutput[FFT_SAMPLES];
+float32_t lastMaximums[MAXIMUMS_TO_KEEP];
+uint8_t lastMaximumsIndex = 0;
 volatile bool sampling = false;
 volatile int samplePosition = 0;
+float32_t lastMaximumValue;
+uint32_t lastMaximumIndex;
 float32_t maximumValue;
 uint32_t maximumIndex;
 float32_t averageValue;
 
+// Values to remove from bins to better normalize them
+const uint32_t noise[64] = {
+    8,6,6,5,3,4,4,4,3,4,4,3,2,3,3,4,
+    2,1,2,1,3,2,3,2,1,2,3,1,2,3,4,4,
+    3,2,2,2,2,2,2,1,3,2,2,2,2,2,2,2,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,4
+};
+
 void serialDebugFFT() {
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 8; i++) {
         Serial.print(fftOutput[i]);
         Serial.print("\t");
     }
@@ -47,6 +60,8 @@ AudioVisualizer::AudioVisualizer() {
     for (int i = 0; i < FFT_SAMPLES; i++) {
         windowOutput[i] = 0.5 - (0.5 * arm_cos_f32((2.0 * PI * i) / (FFT_SAMPLES / 2 - 1)));
     }
+
+    maximumValue = 8;
 }
 
 /**
@@ -72,6 +87,20 @@ float32_t AudioVisualizer::getAverageValue() {
     return averageValue;
 }
 
+float32_t AudioVisualizer::getAverageMaximumValue() {
+    float32_t average;
+    arm_mean_f32(lastMaximums, MAXIMUMS_TO_KEEP, &average);
+    return average;
+}
+
+uint32_t AudioVisualizer::getLastMaximumIndex() {
+    return lastMaximumIndex;
+}
+
+float32_t AudioVisualizer::getLastMaximumValue() {
+    return lastMaximumValue;
+}
+
 uint32_t AudioVisualizer::getMaximumIndex() {
     return maximumIndex;
 }
@@ -93,20 +122,34 @@ void AudioVisualizer::loop() {
         return;
     }
 
-    window(samples);
+    //window(samples);
     arm_cfft_f32(&arm_cfft_sR_f32_len128, samples, 0, 1);
-    arm_cmplx_mag_squared_f32(samples, fftOutput, FFT_SAMPLES);
-    for (int i = 0; i < FFT_SAMPLES / 2; i++) {
-        fftOutput[i] = 20 * log10(fftOutput[i]);    // Convert to dB scale
-        fftSmoothed[i] = max(fftOutput[i], SMOOTHING * fftSmoothed[i] + ((1 - SMOOTHING) * fftOutput[i]));
-    }
-    arm_max_f32(fftOutput, FFT_SAMPLES, &maximumValue, &maximumIndex);
-    arm_mean_f32(fftOutput, FFT_SAMPLES, &averageValue);
-    //serialDebugFFT();
+    arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES);
 
     sampling = true;
     samplePosition = 0;
     NVIC_EnableIRQ(ADC_IRQn);
+
+    for (int i = 0; i < FFT_SAMPLES / 2; i++) {
+        fftOutput[i] = fftOutput[i] < noise[i] ? 0 : fftOutput[i];
+        fftSmoothed[i] = max(fftOutput[i], SMOOTHING * fftSmoothed[i] + ((1 - SMOOTHING) * fftOutput[i]));
+    }
+
+    arm_max_f32(fftSmoothed, FFT_SAMPLES, &lastMaximumValue, &lastMaximumIndex);
+    arm_mean_f32(fftSmoothed, FFT_SAMPLES, &averageValue);
+
+    lastMaximums[lastMaximumsIndex] = lastMaximumValue;
+    lastMaximumsIndex++;
+    if (lastMaximumsIndex >= MAXIMUMS_TO_KEEP) {
+        lastMaximumsIndex = 0;
+    }
+
+    //serialDebugFFT();
+
+    if (lastMaximumValue > maximumValue) {
+        maximumValue = lastMaximumValue;
+        maximumIndex = lastMaximumIndex;
+    }
 }
 
 void disableADC() {

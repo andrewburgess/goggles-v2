@@ -21,6 +21,9 @@ public:
     void loop();
     float32_t getDB(float32_t sample);
     float32_t getAverageValue();
+    float32_t getAverageMaximumValue();
+    float32_t getLastMaximumValue();
+    uint32_t getLastMaximumIndex();
     uint32_t getMaximumIndex();
     float32_t getMaximumValue();
     float32_t* getOutput();

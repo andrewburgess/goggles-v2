@@ -65,15 +65,6 @@ void Strip::loop() {
 
     float32_t sample = output[1];
 
-    Serial.print(output[0]);
-    Serial.print("\t");
-    Serial.print(sample);
-    Serial.print("\t");
-    Serial.print(average);
-    Serial.print("\t");
-    Serial.print(maximum);
-    Serial.print("\n");
-
     if (sample - abs(avg) > 10) {
         brightness = min(200, 128 + (sample));
     } else {
