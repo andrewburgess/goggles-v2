@@ -48,9 +48,7 @@ void Strip::initialize(AudioVisualizer pVisualizer) {
 }
 
 void Strip::loop() {
-    float32_t *output = visualizer.getOutput();
-    float32_t average = visualizer.getAverageValue();
-    float32_t maximum = visualizer.getMaximumValue();
+    float32_t *output = visualizer.getEqualizedOutput();
 
     float32_t reads[previousReads.size()];
     for (int i = 0; i < previousReads.size(); i++) {
@@ -63,19 +61,22 @@ void Strip::loop() {
         setPixelColor(i, Strip::Color(255, 0, 0));
     }
 
-    float32_t sample = output[1];
+    float32_t sample = output[0] + output[1];
 
-    if (sample - abs(avg) > 10) {
-        brightness = min(200, 128 + (sample));
+    if (sample > (avg * 1.5)) {
+        uint8_t nextBrightness = min(200, round(255 * ((sample - avg) / sample)));
+        if (nextBrightness > brightness) {
+            brightness = nextBrightness;
+        }
     } else {
         brightness = max(16, brightness - 30);
-
-        if (previousReads.size() == 16) {
-            previousReads.pop_front();
-        }
-
-        previousReads.push_back(sample);
     }
+
+    if (previousReads.size() == 16) {
+        previousReads.pop_front();
+    }
+
+    previousReads.push_back(sample);
 
     setBrightness(brightness);
 

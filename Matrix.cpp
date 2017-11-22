@@ -5,9 +5,20 @@
 #include "gamma.h"
 #include "graphics.h"
 
-const uint8_t *FRAMES[] = {BEER, CHERRIES, MARIO};
+#define TOTAL_STATES        3
+#define STATE_VISUALIZE     0
+#define STATE_BEER          1
+#define STATE_EYES          2
+
 #define NUMBER_OF_FRAMES 3
 #define FRAME_DURATION 300
+
+#define BEER_FRAMES 1
+const uint8_t *beerAnimation[] = {
+    BEER, BEER
+};
+
+#define EYE_POSITIONS 5
 
 // Two matrix boards of 8x8, tiled horizontally
 Matrix::Matrix()
@@ -35,6 +46,7 @@ uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
 
 void Matrix::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
+    state = STATE_EYES;
 
     begin();
     setTextWrap(false);
@@ -43,7 +55,9 @@ void Matrix::initialize(AudioVisualizer pVisualizer) {
     show();
 
     frameIndex = 0;
-    lastTime = millis();
+    lastTime = 0;
+    lastBlink = millis();
+    lastStateChange = millis();
 }
 
 void Matrix::drawPixel(int16_t x, int16_t y, uint16_t color)
@@ -79,6 +93,25 @@ void Matrix::drawPicture(const uint8_t picture[]) {
     }
 }
 
+void Matrix::drawPictures(const uint8_t *pictures[], uint8_t frameIndex) {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+    uint8_t i;
+
+    for (uint8_t i = 0; i < MATRIX_SIZE * MATRIX_SIZE; i++) {
+        red = pgm_read_byte(&pictures[frameIndex * 2][i * 3]);
+        green = pgm_read_byte(&pictures[frameIndex * 2][i * 3 + 1]);
+        blue = pgm_read_byte(&pictures[frameIndex * 2][i * 3 + 2]);
+        drawPixel(i % MATRIX_SIZE, i / MATRIX_SIZE, Matrix::Color(red, green, blue));
+
+        red = pgm_read_byte(&pictures[frameIndex * 2 + 1][i * 3]);
+        green = pgm_read_byte(&pictures[frameIndex * 2 + 1][i * 3 + 1]);
+        blue = pgm_read_byte(&pictures[frameIndex * 2 + 1][i * 3 + 2]);
+        drawPixel(i % MATRIX_SIZE + MATRIX_SIZE, i / MATRIX_SIZE, Matrix::Color(red, green, blue));
+    }
+}
+
 void Matrix::fillScreen(uint16_t color)
 {
     uint16_t i, pixels;
@@ -92,6 +125,32 @@ void Matrix::fillScreen(uint16_t color)
 }
 
 void Matrix::loop() {
+    switch (state) {
+        case STATE_VISUALIZE:
+            visualize();
+            break;
+        case STATE_BEER:
+            animate(beerAnimation, BEER_FRAMES, FRAME_DURATION);
+            break;
+        case STATE_EYES:
+            renderEyes();
+            break;
+        default:
+            visualize();
+            break;
+    }
+
+    if (millis() - lastStateChange > 5000) {
+        uint8_t shouldChange = random(max(1, 30000 - (millis() - lastStateChange)));
+        if (shouldChange == 0) {
+            frameIndex = 0;
+            state = (++state) % TOTAL_STATES;
+            lastStateChange = millis();
+        }
+    }
+}
+
+void Matrix::visualize() {
     clear();
 
     float32_t *output = visualizer.getSmoothedOutput();
@@ -112,19 +171,69 @@ void Matrix::loop() {
     show();
 }
 
-void animation() {
-    /*if (millis() - lastTime < FRAME_DURATION) {
+void Matrix::renderEyes() {
+    if (millis() - lastTime < 32) {
+        return;
+    }
+
+    clear();
+
+    uint8_t shouldChange = random(eyeDirection == 0 ? 4 : 16);
+    if (shouldChange == 0) {
+        eyeDirection = random(12) + 1;
+    }
+
+    if (millis() - lastBlink > 3000) {
+        uint8_t shouldBlink = random(max(1, 6000 - (millis() - lastBlink)));
+        if (shouldBlink == 0) {
+            eyeDirection = 0;
+            lastBlink = millis();
+        }
+    }
+
+    switch (eyeDirection) {
+        case 0:
+            drawPicture(EYE_BLINK);
+            break;
+        case 1:
+            drawPicture(EYE_LEFT);
+            break;
+        case 2:
+            drawPicture(EYE_RIGHT);
+            break;
+        case 3:
+            drawPicture(EYE_UP);
+            break;
+        case 4:
+            drawPicture(EYE_DOWN);
+            break;
+        case 5:
+            lastBlink = millis();
+            drawPicture(EYE_BLINK);
+            break;
+        default:
+            drawPicture(EYE_CENTER);
+            break;
+    }
+
+    show();
+
+    lastTime = millis();
+}
+
+void Matrix::animate(const uint8_t *frames[], uint8_t numberOfFrames, uint32_t frameDuration) {
+    if (millis() - lastTime < frameDuration) {
         return;
     }
 
     clear();
     frameIndex++;
-    if (frameIndex >= NUMBER_OF_FRAMES) {
+    if (frameIndex >= numberOfFrames) {
         frameIndex = 0;
     }
 
-    drawPicture(FRAMES[frameIndex]);
+    drawPictures(frames, frameIndex);
     show();
 
-    lastTime = millis();*/
+    lastTime = millis();
 }

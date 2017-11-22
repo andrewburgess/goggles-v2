@@ -20,6 +20,7 @@
 
 float32_t samples[FFT_SAMPLES * 2];
 float32_t fftOutput[FFT_SAMPLES];
+float32_t fftEqualized[FFT_SAMPLES];
 float32_t fftSmoothed[FFT_SAMPLES / 2];
 float32_t windowOutput[FFT_SAMPLES];
 float32_t lastMaximums[MAXIMUMS_TO_KEEP];
@@ -33,16 +34,23 @@ uint32_t maximumIndex;
 float32_t averageValue;
 
 // Values to remove from bins to better normalize them
-const uint32_t noise[64] = {
-    8,6,6,5,3,4,4,4,3,4,4,3,2,3,3,4,
-    2,1,2,1,3,2,3,2,1,2,3,1,2,3,4,4,
-    3,2,2,2,2,2,2,1,3,2,2,2,2,2,2,2,
-    2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,4
+const float32_t noise[64] = {
+    4.4, 3.2, 2.1, 1.7, 1.2, 0.8, 0.5, 0.4, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
+    0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1
+};
+
+const float32_t eq[64]={
+    0.12, 0.11, 0.21, 0.28, 0.30, 0.32, 0.34, 0.36, 0.40, 0.45, 0.50, 0.62, 0.70, 0.78, 0.80, 0.81,
+    0.83, 0.86, 0.90, 0.94, 0.96, 0.97, 0.98, 0.99, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00
 };
 
 void serialDebugFFT() {
     for (int i = 0; i < 8; i++) {
-        Serial.print(fftOutput[i]);
+        Serial.print(fftEqualized[i]);
         Serial.print("\t");
     }
 
@@ -89,7 +97,7 @@ float32_t AudioVisualizer::getAverageValue() {
 
 float32_t AudioVisualizer::getAverageMaximumValue() {
     float32_t average;
-    arm_mean_f32(lastMaximums, MAXIMUMS_TO_KEEP, &average);
+    arm_mean_f32(lastMaximums,MAXIMUMS_TO_KEEP, &average);
     return average;
 }
 
@@ -113,6 +121,10 @@ float32_t* AudioVisualizer::getOutput() {
     return fftOutput;
 }
 
+float32_t* AudioVisualizer::getEqualizedOutput() {
+    return fftEqualized;
+}
+
 float32_t* AudioVisualizer::getSmoothedOutput() {
     return fftSmoothed;
 }
@@ -122,7 +134,7 @@ void AudioVisualizer::loop() {
         return;
     }
 
-    //window(samples);
+    window(samples);
     arm_cfft_f32(&arm_cfft_sR_f32_len128, samples, 0, 1);
     arm_cmplx_mag_f32(samples, fftOutput, FFT_SAMPLES);
 
@@ -131,8 +143,9 @@ void AudioVisualizer::loop() {
     NVIC_EnableIRQ(ADC_IRQn);
 
     for (int i = 0; i < FFT_SAMPLES / 2; i++) {
-        fftOutput[i] = fftOutput[i] < noise[i] ? 0 : fftOutput[i];
-        fftSmoothed[i] = max(fftOutput[i], SMOOTHING * fftSmoothed[i] + ((1 - SMOOTHING) * fftOutput[i]));
+        fftOutput[i] = fftOutput[i] < noise[i] ? 0 : fftOutput[i] - noise[i];
+        fftEqualized[i] = fftOutput[i] * eq[i];
+        fftSmoothed[i] = max(fftEqualized[i], SMOOTHING * fftSmoothed[i] + ((1 - SMOOTHING) * fftEqualized[i]));
     }
 
     arm_max_f32(fftSmoothed, FFT_SAMPLES, &lastMaximumValue, &lastMaximumIndex);

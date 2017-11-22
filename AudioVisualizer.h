@@ -26,6 +26,7 @@ public:
     uint32_t getLastMaximumIndex();
     uint32_t getMaximumIndex();
     float32_t getMaximumValue();
+    float32_t* getEqualizedOutput();
     float32_t* getOutput();
     float32_t* getSmoothedOutput();
 };
