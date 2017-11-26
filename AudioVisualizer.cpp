@@ -12,11 +12,11 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
-#define SMOOTHING               0.45
+#define SMOOTHING               0.65
 #define MICROPHONE_LOW          310
 #define MICROPHONE_MIDPOINT     1551
 #define MICROPHONE_HIGH         2793
-#define MAXIMUMS_TO_KEEP        8
+#define MAXIMUMS_TO_KEEP        16
 
 float32_t samples[FFT_SAMPLES * 2];
 float32_t fftOutput[FFT_SAMPLES];
@@ -42,8 +42,8 @@ const float32_t noise[64] = {
 };
 
 const float32_t eq[64]={
-    0.12, 0.11, 0.21, 0.28, 0.30, 0.32, 0.34, 0.36, 0.40, 0.45, 0.50, 0.62, 0.70, 0.78, 0.80, 0.81,
-    0.83, 0.86, 0.90, 0.94, 0.96, 0.97, 0.98, 0.99, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+    0.12, 0.11, 0.21, 0.24, 0.26, 0.30, 0.32, 0.34, 0.36, 0.42, 0.44, 0.48, 0.52, 0.56, 0.63, 0.65,
+    0.68, 0.72, 0.74, 0.78, 0.81, 0.83, 0.87, 0.89, 0.93, 0.95, 0.98, 0.99, 1.00, 1.00, 1.00, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00
 };
@@ -76,6 +76,9 @@ AudioVisualizer::AudioVisualizer() {
  * Initialize the Timer clock so that we can take samples
  */
 void AudioVisualizer::initialize() {
+    lastMaximumValue = 0;
+    maximumValue = 0;
+
     // Make sure to enable the ADC clock in power management
     PM->APBCMASK.reg |= PM_APBCMASK_ADC;
 
@@ -148,8 +151,10 @@ void AudioVisualizer::loop() {
         fftSmoothed[i] = max(fftEqualized[i], SMOOTHING * fftSmoothed[i] + ((1 - SMOOTHING) * fftEqualized[i]));
     }
 
-    arm_max_f32(fftSmoothed, FFT_SAMPLES, &lastMaximumValue, &lastMaximumIndex);
-    arm_mean_f32(fftSmoothed, FFT_SAMPLES, &averageValue);
+    lastMaximumValue = 0;
+    lastMaximumIndex = 0;
+    arm_max_f32(fftSmoothed, FFT_SAMPLES / 2, &lastMaximumValue, &lastMaximumIndex);
+    arm_mean_f32(fftSmoothed, FFT_SAMPLES / 2, &averageValue);
 
     lastMaximums[lastMaximumsIndex] = lastMaximumValue;
     lastMaximumsIndex++;

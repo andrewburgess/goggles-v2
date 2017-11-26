@@ -27,10 +27,11 @@ private:
     QList<float32_t> previousReads;
     long lastTime;
     uint8_t position;
-    int head;
-    int tail;
+    uint8_t currentColor[3];
+    uint8_t currentCycle;
 
-    void chase();
+    void calculateBeat();
+    void cycle();
 };
 
 #endif

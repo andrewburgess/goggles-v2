@@ -5,13 +5,15 @@
 #include "gamma.h"
 #include "graphics.h"
 
-#define TOTAL_STATES        3
+#define TOTAL_STATES        4
 #define STATE_VISUALIZE     0
 #define STATE_BEER          1
 #define STATE_EYES          2
+#define STATE_TEXT          3
 
-#define NUMBER_OF_FRAMES 3
-#define FRAME_DURATION 300
+#define NUMBER_OF_FRAMES        3
+#define COLUMN_AVERAGE_FRAMES   10
+#define FRAME_DURATION          300
 
 #define BEER_FRAMES 1
 const uint8_t *beerAnimation[] = {
@@ -19,6 +21,37 @@ const uint8_t *beerAnimation[] = {
 };
 
 #define EYE_POSITIONS 5
+
+static const float32_t column0[]  = { 2, 0, 0.75, 0.25 };
+static const float32_t column1[]  = { 2, 1, 0.65, 0.35 };
+static const float32_t column2[]  = { 3, 1, 0.16, 0.50, 0.34 };
+static const float32_t column3[]  = { 4, 2, 0.08, 0.42, 0.38, 0.12 };
+static const float32_t column4[]  = { 4, 2, 0.02, 0.05, 0.43, 0.53 };
+static const float32_t column5[]  = { 4, 3, 0.12, 0.28, 0.50, 0.20 };
+static const float32_t column6[]  = { 8, 4, 0.01, 0.09, 0.12, 0.20, 0.30, 0.36, 0.10, 0.09 };
+static const float32_t column7[]  = { 10, 6, 0.01, 0.05, 0.08, 0.10, 0.30, 0.24, 0.09, 0.07, 0.05, 0.01 };
+static const float32_t column8[]  = { 8, 7, 0.03, 0.07, 0.12, 0.18, 0.42, 0.29, 0.09, 0.07 };
+static const float32_t column9[]  = { 8, 8, 0.03, 0.07, 0.12, 0.18, 0.42, 0.29, 0.09, 0.07 };
+static const float32_t column10[] = { 8, 10, 0.03, 0.07, 0.12, 0.18, 0.42, 0.29, 0.09, 0.07 };
+static const float32_t column11[] = { 8, 12, 0.07, 0.09, 0.15, 0.19, 0.32, 0.24, 0.12, 0.09 };
+static const float32_t column12[] = { 10, 14, 0.04, 0.06, 0.08, 0.13, 0.20, 0.24, 0.09, 0.07, 0.06, 0.03 };
+static const float32_t column13[] = { 12, 17, 0.02, 0.03, 0.07, 0.11, 0.13, 0.15, 0.16, 0.13, 0.09, 0.05, 0.04, 0.03 };
+static const float32_t column14[] = { 14, 20, 0.01, 0.02, 0.02, 0.07, 0.11, 0.16, 0.18, 0.12, 0.10, 0.09, 0.05, 0.02, 0.02, 0.01 };
+static const float32_t column15[] = { 16, 22, 0.01, 0.02, 0.02, 0.07, 0.11, 0.16, 0.17, 0.12, 0.09, 0.08, 0.06, 0.03, 0.02, 0.02, 0.01, 0.01 };
+
+static const float32_t *columnData[] = {
+                                        column0, column1, column2, column3,
+                                        column4, column5, column6, column7,
+                                        column8, column9, column10, column11,
+                                        column12, column13, column14, column15
+                                    };
+
+uint32_t columnDivider[16];
+uint8_t dotCounter;
+uint8_t peak[16];
+float32_t columns[16][COLUMN_AVERAGE_FRAMES]; // Column levels for previous 10 frames
+float32_t minimumAverageLevel[16]; // Used for dynamically adjusting
+float32_t maximumAverageLevel[16]; // pseudo rolling averages for prior frames
 
 // Two matrix boards of 8x8, tiled horizontally
 Matrix::Matrix()
@@ -46,7 +79,7 @@ uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
 
 void Matrix::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
-    state = STATE_EYES;
+    state = STATE_TEXT;
 
     begin();
     setTextWrap(false);
@@ -58,10 +91,18 @@ void Matrix::initialize(AudioVisualizer pVisualizer) {
     lastTime = 0;
     lastBlink = millis();
     lastStateChange = millis();
+
+    uint8_t i;
+    for (i = 0; i < 16; i++) {
+        minimumAverageLevel[i] = 0;
+        maximumAverageLevel[i] = 1;
+    }
 }
 
 void Matrix::drawPixel(int16_t x, int16_t y, uint16_t color)
 {
+    if ((x < 0 || y < 0) || (x >= MATRIX_SIZE * 2 || y >= MATRIX_SIZE)) return;
+
     int pixelPosition;
 
     if (x >= MATRIX_SIZE) // Pixel is on second matrix board
@@ -135,16 +176,19 @@ void Matrix::loop() {
         case STATE_EYES:
             renderEyes();
             break;
+        case STATE_TEXT:
+            writeText();
+            break;
         default:
             visualize();
             break;
     }
 
     if (millis() - lastStateChange > 5000) {
-        uint8_t shouldChange = random(max(1, 30000 - (millis() - lastStateChange)));
+        uint8_t shouldChange = random(max(1, 10000 - (millis() - lastStateChange)));
         if (shouldChange == 0) {
             frameIndex = 0;
-            state = (++state) % TOTAL_STATES;
+            state = random(0, TOTAL_STATES - 1);
             lastStateChange = millis();
         }
     }
@@ -153,22 +197,79 @@ void Matrix::loop() {
 void Matrix::visualize() {
     clear();
 
+    fillRect(0, 0, 16, 3, Matrix::Color(255, 0, 0));
+    fillRect(0, 3, 16, 2, Matrix::Color(255, 255, 0));
+    fillRect(0, 5, 16, 3, Matrix::Color(0, 255, 0));
+
+    float32_t *data;
     float32_t *output = visualizer.getSmoothedOutput();
-    float32_t maximum = visualizer.getAverageMaximumValue();
-    if (maximum == 0) {
-        maximum = 100;
-    }
-    for (int i = 0; i < 16; i++) {
-        float32_t value = 8 - (output[i] / maximum) * 8;
-        if (value > 7) {
-            drawLine(i, 0, i, 7, 0);
-            continue;
+    uint8_t i, c, x, y;
+    float32_t volume, minimumLevel, maximumLevel, level;
+    uint8_t numberOfBins;
+    uint8_t startBin;
+
+    float32_t average = visualizer.getAverageValue();
+    float32_t maximum = visualizer.getLastMaximumValue();
+
+    for (x = 0; x < 16; x++) {
+        level = 0;
+        volume = 0;
+        minimumLevel = 0;
+        maximumLevel = 0;
+
+        data = (float32_t *)columnData[x];
+        numberOfBins = data[0];
+        startBin = data[1];
+
+        for (i = 0; i < numberOfBins; i++) {
+            volume += output[startBin + i] * data[i + 2];
         }
 
-        drawLine(i, max(0, round(value) - 1), i, 7, Matrix::Color(255, 0, 0));
+        columns[x][frameIndex] = volume;
+        minimumLevel = maximumLevel = columns[x][0];
+        for (i = 0; i < COLUMN_AVERAGE_FRAMES; i++) {
+            if (columns[x][i] < minimumLevel)       minimumLevel = columns[x][i];
+            else if (columns[x][i] > maximumLevel)  maximumLevel = columns[x][i];
+        }
+
+        if ((maximumLevel - minimumLevel) < (maximum - average)) {
+            maximumLevel = minimumLevel + (maximum - average);
+        }
+
+        minimumAverageLevel[x] = (minimumAverageLevel[x] + minimumLevel) / 2;
+        maximumAverageLevel[x] = (maximumAverageLevel[x] + maximumLevel) / 2;
+
+        level = 10.0f * (columns[x][frameIndex] - minimumAverageLevel[x]) / (maximumAverageLevel[x] - minimumAverageLevel[x]);
+
+        if (level < 0)       c = 0;
+        else if (level > 10) c = 10;
+        else                 c = (uint8_t)(round(level));
+
+        if (c > peak[x]) peak[x] = c;
+
+        if (peak[x] <= 0) {
+            drawLine(x, 0, x, 7, Matrix::Color(0, 0, 0));
+            continue;
+        } else if (c < 8) {
+            drawLine(x, 0, x, 7 - c, Matrix::Color(0, 0, 0));
+        }
+
+        y = 7 - peak[x];
+        if (y < 2)      drawPixel(x, y, Matrix::Color(255, 0, 0));
+        else if (y < 6) drawPixel(x, y, Matrix::Color(255, 255, 0));
+        else            drawPixel(x, y, Matrix::Color(0, 255, 0));
     }
 
     show();
+
+    if (++dotCounter >= 2) {
+        dotCounter = 0;
+        for (x = 0; x < 16; x++) {
+            if (peak[x] > 0) peak[x]--;
+        }
+    }
+
+    if (++frameIndex >= COLUMN_AVERAGE_FRAMES) frameIndex = 0;
 }
 
 void Matrix::renderEyes() {
@@ -183,8 +284,8 @@ void Matrix::renderEyes() {
         eyeDirection = random(12) + 1;
     }
 
-    if (millis() - lastBlink > 3000) {
-        uint8_t shouldBlink = random(max(1, 6000 - (millis() - lastBlink)));
+    if (millis() - lastBlink > 2000) {
+        uint8_t shouldBlink = random(max(1, 4000 - (millis() - lastBlink)));
         if (shouldBlink == 0) {
             eyeDirection = 0;
             lastBlink = millis();
@@ -236,4 +337,24 @@ void Matrix::animate(const uint8_t *frames[], uint8_t numberOfFrames, uint32_t f
     show();
 
     lastTime = millis();
+}
+
+void Matrix::writeText() {
+    if (millis() - lastTime < 32) {
+        return;
+    }
+
+    lastTime = millis();
+
+    setTextColor(Matrix::Color(255, 0, 0));
+    setTextWrap(false);
+
+    clear();
+    setCursor(frameIndex, 0);
+    print(F("REZZ 4 EVER"));
+    show();
+
+    if (--frameIndex < -86) {
+        frameIndex = width();
+    }
 }

@@ -1,6 +1,7 @@
 #ifndef _MATRIX_H_
 #define _MATRIX_H_
 
+#include <arm_math.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_DotStar.h>
 
@@ -27,7 +28,7 @@ public:
 
 private:
     uint8_t state;
-    uint8_t frameIndex;
+    int32_t frameIndex;
     long lastTime;
     uint8_t eyeDirection;
     long lastBlink;
@@ -37,6 +38,7 @@ private:
     void animate(const uint8_t *frames[], uint8_t numberOfFrames, uint32_t frameDuration);
     void renderEyes();
     void visualize();
+    void writeText();
 };
 
 #endif
