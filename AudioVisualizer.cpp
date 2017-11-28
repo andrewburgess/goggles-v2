@@ -18,6 +18,7 @@
 #define MICROPHONE_HIGH         2793
 #define MAXIMUMS_TO_KEEP        16
 
+float32_t beatSamples[FFT_SAMPLES];
 float32_t samples[FFT_SAMPLES * 2];
 float32_t fftOutput[FFT_SAMPLES];
 float32_t fftEqualized[FFT_SAMPLES];
@@ -35,14 +36,14 @@ float32_t averageValue;
 
 // Values to remove from bins to better normalize them
 const float32_t noise[64] = {
-    4.4, 3.2, 2.1, 1.7, 1.2, 0.8, 0.5, 0.4, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
+    3.4, 2.6, 1.6, 1.4, 0.8, 0.6, 0.4, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
     0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
     0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
     0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1
 };
 
 const float32_t eq[64]={
-    0.12, 0.11, 0.21, 0.24, 0.26, 0.30, 0.32, 0.34, 0.36, 0.42, 0.44, 0.48, 0.52, 0.56, 0.63, 0.65,
+    0.22, 0.24, 0.26, 0.28, 0.30, 0.32, 0.32, 0.34, 0.36, 0.42, 0.44, 0.48, 0.52, 0.56, 0.63, 0.65,
     0.68, 0.72, 0.74, 0.78, 0.81, 0.83, 0.87, 0.89, 0.93, 0.95, 0.98, 0.99, 1.00, 1.00, 1.00, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00
@@ -238,6 +239,7 @@ void ADC_Handler(void) {
     // expected microphone values
     // Microphone has DC bias of 1.25V and 2Vpp. VCC is 3.3V, reading is 12b (so 0-4095)
     float32_t value = (float32_t)ADC->RESULT.reg;
+
     value = (value - MICROPHONE_LOW) * (2) / (MICROPHONE_HIGH - MICROPHONE_LOW) - 1;
 
     samples[samplePosition * 2] = value;

@@ -27,8 +27,9 @@ private:
     QList<float32_t> previousReads;
     long lastTime;
     uint8_t position;
-    uint8_t currentColor[3];
     uint8_t currentCycle;
+    float32_t largestRead;
+    long lastBeat;
 
     void calculateBeat();
     void cycle();

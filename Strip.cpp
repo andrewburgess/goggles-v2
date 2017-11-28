@@ -8,9 +8,7 @@ Strip::Strip()
     : Adafruit_DotStar(LED_STRIP_PIXELS, LED_STRIP_DATA_PIN, LED_STRIP_CLOCK_PIN, DOTSTAR_BRG)
 {
     brightness = 16;
-    currentColor[0] = 255;
-    currentColor[1] = 0;
-    currentColor[2] = 0;
+    largestRead = 1;
 }
 
 // Downgrade 24-bit color to 16-bit (add reverse gamma lookup here?)
@@ -33,6 +31,7 @@ uint32_t Wheel(byte WheelPos) {
 
 void Strip::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
+    lastBeat = millis();
 
     begin();
     setBrightness(8);
@@ -60,21 +59,31 @@ void Strip::calculateBeat() {
     arm_mean_f32(reads, previousReads.size(), &avg);
 
     float32_t sample = output[0] + output[1];
+    float32_t threshold = max(largestRead * 0.7, (avg * 1.25));
 
-    if (sample > (avg * 2)) {
-        uint8_t nextBrightness = min(200, round(255 * ((sample - avg) / sample)));
+    if (sample > threshold) {
+        uint8_t nextBrightness = min(228, max(64, round(255 * ((sample - avg) / sample))));
+        position += round((millis() - lastBeat) / 1000) + 5;
+        lastBeat = millis();
         if (nextBrightness > brightness) {
             brightness = nextBrightness;
         }
     } else {
-        brightness = max(48, brightness - 60);
+        largestRead = max(1, largestRead - 0.1);
+        brightness = max(16, brightness - 20);
     }
 
     if (previousReads.size() == 16) {
         previousReads.pop_front();
     }
 
+    if (sample > largestRead) {
+        largestRead = sample;
+    }
+
     previousReads.push_back(sample);
+
+    Serial.println(largestRead);
 
     setBrightness(brightness);
 }

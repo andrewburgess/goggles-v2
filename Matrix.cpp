@@ -79,7 +79,7 @@ uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
 
 void Matrix::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
-    state = STATE_TEXT;
+    state = STATE_VISUALIZE;
 
     begin();
     setTextWrap(false);
@@ -184,14 +184,14 @@ void Matrix::loop() {
             break;
     }
 
-    if (millis() - lastStateChange > 5000) {
+    /*if (millis() - lastStateChange > 5000) {
         uint8_t shouldChange = random(max(1, 10000 - (millis() - lastStateChange)));
         if (shouldChange == 0) {
             frameIndex = 0;
             state = random(0, TOTAL_STATES - 1);
             lastStateChange = millis();
         }
-    }
+    }*/
 }
 
 void Matrix::visualize() {
@@ -232,8 +232,8 @@ void Matrix::visualize() {
             else if (columns[x][i] > maximumLevel)  maximumLevel = columns[x][i];
         }
 
-        if ((maximumLevel - minimumLevel) < (maximum - average)) {
-            maximumLevel = minimumLevel + (maximum - average);
+        if ((maximumLevel - minimumLevel) < max(0.15, (maximum - average))) {
+            maximumLevel = minimumLevel + max(0.15, (maximum - average));
         }
 
         minimumAverageLevel[x] = (minimumAverageLevel[x] + minimumLevel) / 2;
