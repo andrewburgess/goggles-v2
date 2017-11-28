@@ -22,22 +22,22 @@ const uint8_t *beerAnimation[] = {
 
 #define EYE_POSITIONS 5
 
-static const float32_t column0[]  = { 2, 0, 0.75, 0.25 };
-static const float32_t column1[]  = { 2, 1, 0.65, 0.35 };
-static const float32_t column2[]  = { 3, 1, 0.16, 0.50, 0.34 };
-static const float32_t column3[]  = { 4, 2, 0.08, 0.42, 0.38, 0.12 };
-static const float32_t column4[]  = { 4, 2, 0.02, 0.05, 0.43, 0.53 };
-static const float32_t column5[]  = { 4, 3, 0.12, 0.28, 0.50, 0.20 };
-static const float32_t column6[]  = { 8, 4, 0.01, 0.09, 0.12, 0.20, 0.30, 0.36, 0.10, 0.09 };
-static const float32_t column7[]  = { 10, 6, 0.01, 0.05, 0.08, 0.10, 0.30, 0.24, 0.09, 0.07, 0.05, 0.01 };
-static const float32_t column8[]  = { 8, 7, 0.03, 0.07, 0.12, 0.18, 0.42, 0.29, 0.09, 0.07 };
-static const float32_t column9[]  = { 8, 8, 0.03, 0.07, 0.12, 0.18, 0.42, 0.29, 0.09, 0.07 };
-static const float32_t column10[] = { 8, 10, 0.03, 0.07, 0.12, 0.18, 0.42, 0.29, 0.09, 0.07 };
-static const float32_t column11[] = { 8, 12, 0.07, 0.09, 0.15, 0.19, 0.32, 0.24, 0.12, 0.09 };
-static const float32_t column12[] = { 10, 14, 0.04, 0.06, 0.08, 0.13, 0.20, 0.24, 0.09, 0.07, 0.06, 0.03 };
-static const float32_t column13[] = { 12, 17, 0.02, 0.03, 0.07, 0.11, 0.13, 0.15, 0.16, 0.13, 0.09, 0.05, 0.04, 0.03 };
-static const float32_t column14[] = { 14, 20, 0.01, 0.02, 0.02, 0.07, 0.11, 0.16, 0.18, 0.12, 0.10, 0.09, 0.05, 0.02, 0.02, 0.01 };
-static const float32_t column15[] = { 16, 22, 0.01, 0.02, 0.02, 0.07, 0.11, 0.16, 0.17, 0.12, 0.09, 0.08, 0.06, 0.03, 0.02, 0.02, 0.01, 0.01 };
+static const float32_t column0[]  = { 2, 0, 0.75, 0.25 };                                                               // 0        0, 1
+static const float32_t column1[]  = { 2, 1, 0.65, 0.35 };                                                               // 1        1, 2
+static const float32_t column2[]  = { 3, 1, 0.16, 0.50, 0.34 };                                                         // 2        1, 2, 3
+static const float32_t column3[]  = { 4, 2, 0.08, 0.42, 0.38, 0.12 };                                                   // 3,4      2, 3, 4, 5
+static const float32_t column4[]  = { 4, 2, 0.02, 0.05, 0.43, 0.53 };                                                   // 4,5      2, 3, 4, 5
+static const float32_t column5[]  = { 4, 3, 0.12, 0.28, 0.50, 0.20 };                                                   // 5        3, 4, 5, 6
+static const float32_t column6[]  = { 5, 4, 0.08, 0.12, 0.32, 0.30, 0.18 };                                             // 6,7      4, 5, 6, 7, 8
+static const float32_t column7[]  = { 6, 6, 0.06, 0.08, 0.28, 0.32, 0.16, 0.10 };                                       // 8,9      6, 7, 8, 9, 10, 11
+static const float32_t column8[]  = { 6, 8, 0.03, 0.07, 0.42, 0.34, 0.09, 0.05 };                                       // 10,11    8, 9, 10, 11, 12, 13
+static const float32_t column9[]  = { 6, 10, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };                                      // 12,13    10, 11, 12, 13, 14, 15
+static const float32_t column10[] = { 6, 12, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };                                      // 14,15    12, 13, 14, 15, 16, 17
+static const float32_t column11[] = { 6, 14, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };                                      // 16,17    14, 15, 16, 17, 18, 19
+static const float32_t column12[] = { 6, 16, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };                                      // 18,19    16, 17, 18, 19, 20, 21
+static const float32_t column13[] = { 6, 18, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };                                      // 20,21    18, 19, 20, 21, 22, 23
+static const float32_t column14[] = { 6, 20, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };                                      // 22,23    20, 21, 22, 23, 24, 25
+static const float32_t column15[] = { 6, 22, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };                                      // 24,25    22, 23, 24, 25, 26, 27
 
 static const float32_t *columnData[] = {
                                         column0, column1, column2, column3,
