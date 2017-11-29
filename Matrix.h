@@ -40,6 +40,7 @@ private:
     void animate(const uint8_t *frames[], uint8_t numberOfFrames, uint32_t frameDuration);
     void renderEyes();
     void drawBars();
+    void drawHearts();
     void visualize();
     void writeText();
 };

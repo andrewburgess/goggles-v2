@@ -5,14 +5,15 @@
 #include "gamma.h"
 #include "graphics.h"
 
-#define TOTAL_STATES        4
+#define TOTAL_STATES        5
 #define STATE_VISUALIZE     0
 #define STATE_BEER          1
 #define STATE_EYES          2
 #define STATE_TEXT          3
+#define STATE_HEART         4
 
 #define NUMBER_OF_FRAMES        3
-#define COLUMN_AVERAGE_FRAMES   64
+#define COLUMN_AVERAGE_FRAMES   10
 #define FRAME_DURATION          300
 
 #define BEER_FRAMES 1
@@ -22,22 +23,22 @@ const uint8_t *beerAnimation[] = {
 
 #define EYE_POSITIONS 5
 
-static const float32_t column0[]  = { 2, 0, 0.75, 0.25 };
-static const float32_t column1[]  = { 2, 1, 0.65, 0.35 };
-static const float32_t column2[]  = { 3, 1, 0.16, 0.50, 0.34 };
-static const float32_t column3[]  = { 4, 2, 0.08, 0.42, 0.38, 0.12 };
-static const float32_t column4[]  = { 4, 2, 0.02, 0.05, 0.43, 0.53 };
-static const float32_t column5[]  = { 4, 3, 0.12, 0.28, 0.50, 0.20 };
-static const float32_t column6[]  = { 5, 4, 0.08, 0.12, 0.32, 0.30, 0.18 };
-static const float32_t column7[]  = { 6, 6, 0.06, 0.08, 0.28, 0.32, 0.16, 0.10 };
-static const float32_t column8[]  = { 6, 8, 0.03, 0.07, 0.42, 0.34, 0.09, 0.05 };
-static const float32_t column9[]  = { 6, 10, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };
-static const float32_t column10[] = { 6, 12, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };
-static const float32_t column11[] = { 6, 14, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };
-static const float32_t column12[] = { 6, 16, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };
-static const float32_t column13[] = { 6, 18, 0.05, 0.09, 0.32, 0.34, 0.11, 0.09 };
-static const float32_t column14[] = { 10, 21, 0.04, 0.08, 0.08, 0.12, 0.16, 0.20, 0.18, 0.16, 0.10, 0.06 };
-static const float32_t column15[] = { 12, 24, 0.02, 0.04, 0.08, 0.08, 0.14, 0.20, 0.18, 0.16, 0.10, 0.06, 0.06, 0.06 };
+static const float32_t column0[]  = { 1, 0, 1.0 };
+static const float32_t column1[]  = { 2, 0, 0.65, 0.35 };
+static const float32_t column2[]  = { 2, 0, 0.20, 0.80 };
+static const float32_t column3[]  = { 2, 1, 0.40, 0.60 };
+static const float32_t column4[]  = { 2, 1, 0.10, 0.90 };
+static const float32_t column5[]  = { 2, 2, 0.20, 0.80 };
+static const float32_t column6[]  = { 3, 2, 0.15, 0.30, 0.55 };
+static const float32_t column7[]  = { 2, 3, 0.20, 0.70 };
+static const float32_t column8[]  = { 3, 4, 0.10, 0.25, 0.65 };
+static const float32_t column9[]  = { 4, 4, 0.10, 0.10, 0.20, 0.60 };
+static const float32_t column10[] = { 6, 5, 0.10, 0.10, 0.20, 0.60, 0.20, 0.10 };
+static const float32_t column11[] = { 6, 6, 0.10, 0.10, 0.20, 0.60, 0.20, 0.10 };
+static const float32_t column12[] = { 8, 6, 0.10, 0.10, 0.10, 0.20, 0.20, 0.60, 0.10, 0.10 };
+static const float32_t column13[] = { 8, 8, 0.10, 0.10, 0.20, 0.60, 0.20, 0.10, 0.10, 0.10 };
+static const float32_t column14[] = { 10, 10, 0.10, 0.10, 0.10, 0.20, 0.20, 0.20, 0.10, 0.10, 0.10, 0.10 };
+static const float32_t column15[] = { 10, 12, 0.10, 0.10, 0.10, 0.20, 0.20, 0.20, 0.10, 0.10, 0.10, 0.10 };
 
 static const float32_t *columnData[] = {
                                         column0, column1, column2, column3,
@@ -105,7 +106,7 @@ uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
 
 void Matrix::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
-    state = STATE_VISUALIZE;
+    state = STATE_HEART;
 
     begin();
     setTextWrap(false);
@@ -215,19 +216,29 @@ void Matrix::loop() {
         case STATE_TEXT:
             writeText();
             break;
+        case STATE_HEART:
+            drawHearts();
+            break;
         default:
             visualize();
             break;
     }
 
-    /*if (millis() - lastStateChange > 5000) {
-        uint8_t shouldChange = random(max(1, 10000 - (millis() - lastStateChange)));
+    if (millis() - lastStateChange > 5000) {
+        uint8_t shouldChange = random(max(1, 30000 - (millis() - lastStateChange)));
         if (shouldChange == 0) {
+            colorIndex = 0;
+            colorPosition = 0;
             frameIndex = 0;
-            state = random(0, TOTAL_STATES - 1);
+            state = random(0, 255);
+            if (state < 50) {
+                state = STATE_VISUALIZE;
+            } else {
+                state = state % TOTAL_STATES;
+            }
             lastStateChange = millis();
         }
-    }*/
+    }
 }
 
 void Matrix::visualize() {
@@ -241,9 +252,6 @@ void Matrix::visualize() {
     float32_t volume, minimumLevel, maximumLevel, level;
     uint8_t numberOfBins;
     uint8_t startBin;
-
-    float32_t average = visualizer.getAverageValue();
-    float32_t maximum = visualizer.getLastMaximumValue();
 
     for (x = 0; x < 16; x++) {
         level = 0;
@@ -266,8 +274,8 @@ void Matrix::visualize() {
             else if (columns[x][i] > maximumLevel)  maximumLevel = columns[x][i];
         }
 
-        if ((maximumLevel - minimumLevel) < 0.5) {
-            maximumLevel = minimumLevel + 0.5;
+        if ((maximumLevel - minimumLevel) < 0.3) {
+            maximumLevel = minimumLevel + 0.3;
         }
 
         minimumAverageLevel[x] = (minimumAverageLevel[x] + minimumLevel) / 2.0f;
@@ -384,6 +392,34 @@ void Matrix::animate(const uint8_t *frames[], uint8_t numberOfFrames, uint32_t f
     show();
 
     lastTime = millis();
+}
+
+void Matrix::drawHearts() {
+    clear();
+
+    uint32_t color, startColor, endColor;
+    if (colorIndex % 15 < 5) {
+        startColor = highLevelColors[colorIndex % 5];
+        endColor = colorIndex % 15 == 4 ? mediumLevelColors[0] : highLevelColors[(colorIndex % 5) + 1];
+    } else if (colorIndex % 15 < 10) {
+        startColor = mediumLevelColors[colorIndex % 5];
+        endColor = colorIndex % 15 == 9 ? lowLevelColors[0] : mediumLevelColors[(colorIndex % 5) + 1];
+    } else {
+        startColor = lowLevelColors[colorIndex % 5];
+        endColor = colorIndex % 15 == 14 ? highLevelColors[0] : lowLevelColors[(colorIndex % 5) + 1];
+    }
+
+    color = mix(colorPosition, startColor, endColor);
+
+    drawXBitmap(0, 0, HEART, 8, 8, Matrix::Color((color & 0xFF0000) >> 16, (color & 0xFF00) >> 8, (color & 0xFF)));
+    drawXBitmap(8, 0, HEART, 8, 8, Matrix::Color((color & 0xFF0000) >> 16, (color & 0xFF00) >> 8, (color & 0xFF)));
+
+    show();
+
+    colorPosition += 16;
+    if (colorPosition == 0) {
+        colorIndex++;
+    }
 }
 
 void Matrix::writeText() {

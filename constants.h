@@ -2,6 +2,6 @@
 #define _CONSTANTS_H_
 
 // Global Application Defines
-#define FFT_SAMPLES     128
+#define FFT_SAMPLES     64
 
 #endif
