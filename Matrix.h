@@ -32,6 +32,7 @@ private:
     uint8_t state;
     int32_t frameIndex;
     long lastTime;
+    long stateDuration;
     uint8_t eyeDirection;
     long lastBlink;
     long lastStateChange;

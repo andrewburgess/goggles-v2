@@ -7,10 +7,15 @@
 
 #define TOTAL_STATES        5
 #define STATE_VISUALIZE     0
+#define VISUALIZE_DURATION  30000
 #define STATE_BEER          1
+#define BEER_DURATION       2000
 #define STATE_EYES          2
+#define EYES_DURATION       15000
 #define STATE_TEXT          3
+#define TEXT_DURATION       8000
 #define STATE_HEART         4
+#define HEART_DURATION      15000
 
 #define NUMBER_OF_FRAMES        3
 #define COLUMN_AVERAGE_FRAMES   10
@@ -205,18 +210,23 @@ void Matrix::fillScreen(uint16_t color) {
 void Matrix::loop() {
     switch (state) {
         case STATE_VISUALIZE:
+            stateDuration = VISUALIZE_DURATION;
             visualize();
             break;
         case STATE_BEER:
+            stateDuration = BEER_DURATION;
             animate(beerAnimation, BEER_FRAMES, FRAME_DURATION);
             break;
         case STATE_EYES:
+            stateDuration = EYES_DURATION;
             renderEyes();
             break;
         case STATE_TEXT:
+            stateDuration = TEXT_DURATION;
             writeText();
             break;
         case STATE_HEART:
+            stateDuration = HEART_DURATION;
             drawHearts();
             break;
         default:
@@ -224,8 +234,8 @@ void Matrix::loop() {
             break;
     }
 
-    if (millis() - lastStateChange > 5000) {
-        uint8_t shouldChange = random(max(1, 30000 - (millis() - lastStateChange)));
+    if (millis() - lastStateChange > stateDuration) {
+        uint8_t shouldChange = random(max(1, 10000 - (millis() - lastStateChange)));
         if (shouldChange == 0) {
             colorIndex = 0;
             colorPosition = 0;
