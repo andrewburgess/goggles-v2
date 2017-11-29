@@ -27,6 +27,8 @@ public:
     static uint16_t Color(uint8_t red, uint8_t green, uint8_t blue);
 
 private:
+    uint8_t colorIndex;
+    uint8_t colorPosition;
     uint8_t state;
     int32_t frameIndex;
     long lastTime;
@@ -37,6 +39,7 @@ private:
 
     void animate(const uint8_t *frames[], uint8_t numberOfFrames, uint32_t frameDuration);
     void renderEyes();
+    void drawBars();
     void visualize();
     void writeText();
 };

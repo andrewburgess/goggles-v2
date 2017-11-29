@@ -11,7 +11,6 @@ Strip::Strip()
     largestRead = 1;
 }
 
-// Downgrade 24-bit color to 16-bit (add reverse gamma lookup here?)
 uint32_t Strip::Color(uint8_t red, uint8_t green, uint8_t blue)
 {
     return ((uint32_t)green << 16) | ((uint32_t)red << 8) | blue;
@@ -59,7 +58,7 @@ void Strip::calculateBeat() {
     arm_mean_f32(reads, previousReads.size(), &avg);
 
     float32_t sample = output[0] + output[1];
-    float32_t threshold = max(largestRead * 0.7, (avg * 1.25));
+    float32_t threshold = max(largestRead * 0.8, (avg * 1.25));
 
     if (sample > threshold) {
         uint8_t nextBrightness = min(228, max(64, round(255 * ((sample - avg) / sample))));
@@ -69,7 +68,7 @@ void Strip::calculateBeat() {
             brightness = nextBrightness;
         }
     } else {
-        largestRead = max(1, largestRead - 0.1);
+        largestRead = max(1.5, largestRead - 0.1);
         brightness = max(16, brightness - 20);
     }
 
@@ -82,8 +81,6 @@ void Strip::calculateBeat() {
     }
 
     previousReads.push_back(sample);
-
-    Serial.println(largestRead);
 
     setBrightness(brightness);
 }
