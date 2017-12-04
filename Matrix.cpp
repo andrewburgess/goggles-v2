@@ -5,25 +5,39 @@
 #include "gamma.h"
 #include "graphics.h"
 
-#define TOTAL_STATES        5
+#define TOTAL_STATES        6
 #define STATE_VISUALIZE     0
-#define VISUALIZE_DURATION  30000
+#define VISUALIZE_DURATION  60000
 #define STATE_BEER          1
-#define BEER_DURATION       2000
+#define BEER_DURATION       1000
 #define STATE_EYES          2
-#define EYES_DURATION       15000
+#define EYES_DURATION       10000
 #define STATE_TEXT          3
 #define TEXT_DURATION       8000
 #define STATE_HEART         4
-#define HEART_DURATION      15000
+#define HEART_DURATION      10000
+#define STATE_COLOR_SWIRL         5
+#define COLOR_SWIRL_DURATION      15000
 
 #define NUMBER_OF_FRAMES        3
 #define COLUMN_AVERAGE_FRAMES   10
-#define FRAME_DURATION          300
+#define FRAME_DURATION          16
 
 #define BEER_FRAMES 1
 const uint8_t *beerAnimation[] = {
     BEER, BEER
+};
+
+#define COLOR_SWIRL_FRAMES 8
+const uint8_t *colorSwirlAnimation[] = {
+    COLOR_SWIRL_1_LEFT, COLOR_SWIRL_1_RIGHT,
+    COLOR_SWIRL_1_LEFT, COLOR_SWIRL_1_RIGHT,
+    COLOR_SWIRL_2_LEFT, COLOR_SWIRL_2_RIGHT,
+    COLOR_SWIRL_2_LEFT, COLOR_SWIRL_2_RIGHT,
+    COLOR_SWIRL_3_LEFT, COLOR_SWIRL_3_RIGHT,
+    COLOR_SWIRL_3_LEFT, COLOR_SWIRL_3_RIGHT,
+    COLOR_SWIRL_4_LEFT, COLOR_SWIRL_4_RIGHT,
+    COLOR_SWIRL_4_LEFT, COLOR_SWIRL_4_RIGHT
 };
 
 #define EYE_POSITIONS 5
@@ -44,6 +58,40 @@ static const float32_t column12[] = { 8, 6, 0.10, 0.10, 0.10, 0.20, 0.20, 0.60, 
 static const float32_t column13[] = { 8, 8, 0.10, 0.10, 0.20, 0.60, 0.20, 0.10, 0.10, 0.10 };
 static const float32_t column14[] = { 10, 10, 0.10, 0.10, 0.10, 0.20, 0.20, 0.20, 0.10, 0.10, 0.10, 0.10 };
 static const float32_t column15[] = { 10, 12, 0.10, 0.10, 0.10, 0.20, 0.20, 0.20, 0.10, 0.10, 0.10, 0.10 };
+
+/*static const float32_t column0[]  = { 1, 0, 1.0 };
+static const float32_t column1[]  = { 3, 0, 0.10, 0.80, 0.10 };
+static const float32_t column2[]  = { 3, 1, 0.10, 0.80, 0.10 };
+static const float32_t column3[]  = { 3, 2, 0.10, 0.80, 0.10 };
+static const float32_t column4[]  = { 3, 3, 0.10, 0.80, 0.10 };
+static const float32_t column5[]  = { 5, 3, 0.15, 0.50, 0.20, 0.10, 0.05 };
+static const float32_t column6[]  = { 5, 3, 0.05, 0.10, 0.70, 0.10, 0.05 };
+static const float32_t column7[]  = { 5, 4, 0.05, 0.10, 0.70, 0.10, 0.05 };
+static const float32_t column8[]  = { 5, 5, 0.05, 0.10, 0.70, 0.10, 0.05 };
+static const float32_t column9[]  = { 5, 6, 0.05, 0.10, 0.70, 0.10, 0.05 };
+static const float32_t column10[] = { 7, 6, 0.05, 0.05, 0.10, 0.60, 0.10, 0.05, 0.05 };
+static const float32_t column11[] = { 7, 7, 0.05, 0.05, 0.10, 0.60, 0.10, 0.05, 0.05 };
+static const float32_t column12[] = { 7, 8, 0.05, 0.05, 0.10, 0.60, 0.10, 0.05, 0.05 };
+static const float32_t column13[] = { 7, 9, 0.05, 0.05, 0.10, 0.60, 0.10, 0.05, 0.05 };
+static const float32_t column14[] = { 9, 9, 0.05, 0.05, 0.05, 0.10, 0.50, 0.10, 0.05, 0.05, 0.05 };
+static const float32_t column15[] = { 9, 10, 0.05, 0.05, 0.05, 0.10, 0.50, 0.10, 0.05, 0.05, 0.05 };*/
+
+/*static const float32_t column0[]  = { 1, 0, 1.0 };
+static const float32_t column1[]  = { 1, 1, 1.0 };
+static const float32_t column2[]  = { 1, 2, 1.0 };
+static const float32_t column3[]  = { 1, 3, 1.0 };
+static const float32_t column4[]  = { 1, 4, 1.0 };
+static const float32_t column5[]  = { 1, 5, 1.0 };
+static const float32_t column6[]  = { 1, 6, 1.0 };
+static const float32_t column7[]  = { 1, 7, 1.0 };
+static const float32_t column8[]  = { 1, 8, 1.0 };
+static const float32_t column9[]  = { 1, 9, 1.0 };
+static const float32_t column10[] = { 1, 10, 1.0 };
+static const float32_t column11[] = { 1, 11, 1.0 };
+static const float32_t column12[] = { 1, 12, 1.0 };
+static const float32_t column13[] = { 1, 13, 1.0 };
+static const float32_t column14[] = { 1, 14, 1.0 };
+static const float32_t column15[] = { 1, 15, 1.0 };*/
 
 static const float32_t *columnData[] = {
                                         column0, column1, column2, column3,
@@ -111,7 +159,7 @@ uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
 
 void Matrix::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
-    state = STATE_HEART;
+    state = STATE_COLOR_SWIRL;
 
     begin();
     setTextWrap(false);
@@ -229,6 +277,10 @@ void Matrix::loop() {
             stateDuration = HEART_DURATION;
             drawHearts();
             break;
+        case STATE_COLOR_SWIRL:
+            stateDuration = COLOR_SWIRL_DURATION;
+            animate(colorSwirlAnimation, COLOR_SWIRL_FRAMES, FRAME_DURATION);
+            break;
         default:
             visualize();
             break;
@@ -241,7 +293,7 @@ void Matrix::loop() {
             colorPosition = 0;
             frameIndex = 0;
             state = random(0, 255);
-            if (state < 50) {
+            if (state < 80) {
                 state = STATE_VISUALIZE;
             } else {
                 state = state % TOTAL_STATES;
@@ -284,8 +336,8 @@ void Matrix::visualize() {
             else if (columns[x][i] > maximumLevel)  maximumLevel = columns[x][i];
         }
 
-        if ((maximumLevel - minimumLevel) < 0.3) {
-            maximumLevel = minimumLevel + 0.3;
+        if ((maximumLevel - minimumLevel) < 0.4) {
+            maximumLevel = minimumLevel + 0.4;
         }
 
         minimumAverageLevel[x] = (minimumAverageLevel[x] + minimumLevel) / 2.0f;
@@ -350,7 +402,7 @@ void Matrix::renderEyes() {
     }
 
     if (millis() - lastBlink > 2000) {
-        uint8_t shouldBlink = random(max(1, 4000 - (millis() - lastBlink)));
+        uint8_t shouldBlink = random(max(1, 2000 - (millis() - lastBlink)));
         if (shouldBlink == 0) {
             eyeDirection = 0;
             lastBlink = millis();

@@ -58,7 +58,7 @@ void Strip::calculateBeat() {
     arm_mean_f32(reads, previousReads.size(), &avg);
 
     float32_t sample = output[0];
-    float32_t threshold = max(largestRead * 0.8, (avg * 1.25));
+    float32_t threshold = max(largestRead * 0.8, (avg * 1.5));
 
     Serial.print(sample);
     Serial.print("\t");
@@ -77,7 +77,7 @@ void Strip::calculateBeat() {
         brightness = max(16, brightness - 20);
     }
 
-    if (previousReads.size() == 16) {
+    if (previousReads.size() == 64) {
         previousReads.pop_front();
     }
 

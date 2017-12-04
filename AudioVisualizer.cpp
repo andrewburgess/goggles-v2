@@ -12,11 +12,11 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
-#define SMOOTHING               0.65
+#define SMOOTHING               0.55
 #define MICROPHONE_LOW          310
 #define MICROPHONE_MIDPOINT     1551
 #define MICROPHONE_HIGH         2793
-#define MAXIMUMS_TO_KEEP        16
+#define MAXIMUMS_TO_KEEP        64
 
 float32_t beatSamples[FFT_SAMPLES];
 float32_t samples[FFT_SAMPLES * 2];
@@ -35,13 +35,17 @@ uint32_t maximumIndex;
 float32_t averageValue;
 
 // Values to remove from bins to better normalize them
-const float32_t noise[32] = {
+const float32_t noise[64] = {
     2.7, 2.1, 1.3, 1.1, 0.6, 0.4, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
     0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1
 };
 
-const float32_t eq[32]={
+const float32_t eq[64]={
     0.10, 0.16, 0.30, 0.36, 0.42, 0.48, 0.50, 0.54, 0.58, 0.62, 0.68, 0.74, 0.76, 0.88, 0.92, 1.00,
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00
 };
 
@@ -97,7 +101,7 @@ float32_t AudioVisualizer::getAverageValue() {
 
 float32_t AudioVisualizer::getAverageMaximumValue() {
     float32_t average;
-    arm_mean_f32(lastMaximums,MAXIMUMS_TO_KEEP, &average);
+    arm_mean_f32(lastMaximums, MAXIMUMS_TO_KEEP, &average);
     return average;
 }
 
