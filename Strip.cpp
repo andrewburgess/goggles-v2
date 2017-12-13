@@ -54,20 +54,15 @@ void Strip::calculateBeat() {
     for (int i = 0; i < previousReads.size(); i++) {
         reads[i] = previousReads.at(i);
     }
-    float32_t avg;
+    float32_t avg = 1;
     arm_mean_f32(reads, previousReads.size(), &avg);
 
-    float32_t sample = output[0];
+    float32_t sample = output[0] + output[1];
     float32_t threshold = max(largestRead * 0.8, (avg * 1.5));
-
-    Serial.print(sample);
-    Serial.print("\t");
-    Serial.print(threshold);
-    Serial.print("\n");
 
     if (sample > threshold) {
         uint8_t nextBrightness = min(228, max(64, round(255 * ((sample - avg) / sample))));
-        position += round((millis() - lastBeat) / 1000) + 5;
+        position += round((millis() - lastBeat) / 1000) + random(5, 15);
         lastBeat = millis();
         if (nextBrightness > brightness) {
             brightness = nextBrightness;
