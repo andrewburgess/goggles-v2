@@ -5,23 +5,23 @@
 #include "gamma.h"
 #include "graphics.h"
 
-#define TOTAL_STATES        6
-#define STATE_VISUALIZE     0
-#define VISUALIZE_DURATION  60000
-#define STATE_BEER          1
-#define BEER_DURATION       1000
-#define STATE_EYES          2
-#define EYES_DURATION       10000
-#define STATE_TEXT          3
-#define TEXT_DURATION       8000
-#define STATE_HEART         4
-#define HEART_DURATION      10000
-#define STATE_COLOR_SWIRL         5
-#define COLOR_SWIRL_DURATION      15000
+#define TOTAL_STATES            5
+#define STATE_VISUALIZE         0
+#define VISUALIZE_DURATION      60000
+#define STATE_COLOR_SWIRL       1
+#define COLOR_SWIRL_DURATION    15000
+#define STATE_EYES              2
+#define EYES_DURATION           10000
+#define STATE_TEXT              3
+#define TEXT_DURATION           8000
+#define STATE_HEART             4
+#define HEART_DURATION          10000
+#define STATE_BEER              5
+#define BEER_DURATION           1000
 
 #define NUMBER_OF_FRAMES        3
 #define COLUMN_AVERAGE_FRAMES   6
-#define FRAME_DURATION          16
+#define FRAME_DURATION          8
 
 #define BEER_FRAMES 1
 const uint8_t *beerAnimation[] = {
@@ -371,7 +371,7 @@ void Matrix::visualize() {
 
     show();
 
-    if (++dotCounter >= 2) {
+    if (++dotCounter >= 1) {
         dotCounter = 0;
         for (x = 0; x < 16; x++) {
             if (peak[x] > 0) peak[x]--;
