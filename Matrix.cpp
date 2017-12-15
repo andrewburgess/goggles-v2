@@ -304,7 +304,7 @@ void Matrix::loop() {
 void Matrix::visualize() {
     clear();
 
-    setBrightness(100);
+    setBrightness(84);
     drawBars();
 
     float32_t *data;
@@ -335,7 +335,7 @@ void Matrix::visualize() {
                 maximumLevel = columns[x][i];
         }
 
-        maximumLevel = max(0, (maximum * 5 + maximumLevel) / 6.0f);
+        maximumLevel = max(0.1, max(maximum * 0.6, maximumLevel));
 
         maximumAverageLevel[x] = (maximumAverageLevel[x] * 5 + maximumLevel) / 6.0f;
 
@@ -495,7 +495,7 @@ void Matrix::writeText() {
     print(F("REZZ 4 EVER"));
     show();
 
-    if (--frameIndex < -86) {
+    if (--frameIndex < -76) {
         frameIndex = width();
     }
 }

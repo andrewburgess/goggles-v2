@@ -30,7 +30,7 @@ Matrix matrix = Matrix();
 Strip strip = Strip();
 
 void setup() {
-    Serial.begin(115200);
+    //Serial.begin(115200);
     visualizer.initialize();
     matrix.initialize(visualizer);
     strip.initialize(visualizer);
