@@ -12,7 +12,7 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
-#define SMOOTHING               0.5
+#define SMOOTHING               0.2
 #define MAXIMUM_SMOOTHING       0.4
 #define MICROPHONE_LOW          310
 #define MICROPHONE_MIDPOINT     1551
@@ -157,7 +157,8 @@ void AudioVisualizer::loop() {
     lastMaximumIndex = 0;
     arm_max_f32(fftEqualized, FFT_SAMPLES / 2, &lastMaximumValue, &lastMaximumIndex);
 
-    maximumValue = max(lastMaximumValue, MAXIMUM_SMOOTHING * maximumValue + ((1 - MAXIMUM_SMOOTHING) * lastMaximumValue));
+    //maximumValue = max(lastMaximumValue, MAXIMUM_SMOOTHING * maximumValue + ((1 - MAXIMUM_SMOOTHING) * lastMaximumValue));
+    maximumValue = lastMaximumValue;
 }
 
 void disableADC() {
