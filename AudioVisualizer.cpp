@@ -12,7 +12,8 @@
 #define WAIT_ADC_RESET  while (ADC->CTRLA.bit.SWRST) {}
 
 #define ADC_CHANNEL             0x00
-#define SMOOTHING               0.55
+#define SMOOTHING               0.5
+#define MAXIMUM_SMOOTHING       0.4
 #define MICROPHONE_LOW          310
 #define MICROPHONE_MIDPOINT     1551
 #define MICROPHONE_HIGH         2793
@@ -35,18 +36,32 @@ uint32_t maximumIndex;
 float32_t averageValue;
 
 // Values to remove from bins to better normalize them
-const float32_t noise[64] = {
+/*const float32_t noise[64] = {
     3.0, 2.6, 1.4, 1.1, 0.6, 0.4, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+};*/
+
+const float32_t noise[64] = {
+    2.2, 1.5, 0.7, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+    0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 };
 
-const float32_t eq[64]={
+/*const float32_t eq[64]={
     0.12, 0.12, 0.34, 0.40, 0.42, 0.48, 0.50, 0.54, 0.58, 0.62, 0.68, 0.74, 0.76, 0.88, 0.92, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
     1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00
+};*/
+
+const float32_t eq[64]={
+    0.3, 0.4, 0.9, 1.2, 1.4, 1.7, 2.0, 2.2, 2.3, 2.4, 2.4, 2.4, 2.4, 2.8, 3.2, 3.7,
+    3.8, 3.9, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 };
 
 void serialDebugFFT() {
@@ -95,26 +110,12 @@ float32_t AudioVisualizer::getDB(float32_t sample) {
     return 20 * log10(abs(sample));
 }
 
-float32_t AudioVisualizer::getAverageValue() {
-    return averageValue;
-}
-
-float32_t AudioVisualizer::getAverageMaximumValue() {
-    float32_t average;
-    arm_mean_f32(lastMaximums, MAXIMUMS_TO_KEEP, &average);
-    return average;
-}
-
 uint32_t AudioVisualizer::getLastMaximumIndex() {
     return lastMaximumIndex;
 }
 
 float32_t AudioVisualizer::getLastMaximumValue() {
     return lastMaximumValue;
-}
-
-uint32_t AudioVisualizer::getMaximumIndex() {
-    return maximumIndex;
 }
 
 float32_t AudioVisualizer::getMaximumValue() {
@@ -154,21 +155,9 @@ void AudioVisualizer::loop() {
 
     lastMaximumValue = 0;
     lastMaximumIndex = 0;
-    arm_max_f32(fftSmoothed, FFT_SAMPLES / 2, &lastMaximumValue, &lastMaximumIndex);
-    arm_mean_f32(fftSmoothed, FFT_SAMPLES / 2, &averageValue);
+    arm_max_f32(fftEqualized, FFT_SAMPLES / 2, &lastMaximumValue, &lastMaximumIndex);
 
-    lastMaximums[lastMaximumsIndex] = lastMaximumValue;
-    lastMaximumsIndex++;
-    if (lastMaximumsIndex >= MAXIMUMS_TO_KEEP) {
-        lastMaximumsIndex = 0;
-    }
-
-    //serialDebugFFT();
-
-    if (lastMaximumValue > maximumValue) {
-        maximumValue = lastMaximumValue;
-        maximumIndex = lastMaximumIndex;
-    }
+    maximumValue = max(lastMaximumValue, MAXIMUM_SMOOTHING * maximumValue + ((1 - MAXIMUM_SMOOTHING) * lastMaximumValue));
 }
 
 void disableADC() {
