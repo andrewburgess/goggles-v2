@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include <Adafruit_DotStar.h>
 
 #include "AudioVisualizer.h"
@@ -19,8 +21,6 @@
 #define STATE_BEER              5
 #define BEER_DURATION           1000
 
-#define NUMBER_OF_FRAMES        3
-#define COLUMN_AVERAGE_FRAMES   6
 #define FRAME_DURATION          8
 
 #define BEER_FRAMES 1
@@ -42,41 +42,7 @@ const uint8_t *colorSwirlAnimation[] = {
 
 #define EYE_POSITIONS 5
 
-/*static const float32_t column0[]  = { 2, 0, 0.75, 0.25 };
-static const float32_t column1[]  = { 2, 0, 0.25, 0.75 };
-static const float32_t column2[]  = { 2, 1, 0.30, 0.70 };
-static const float32_t column3[]  = { 3, 1, 0.10, 0.30, 0.60 };
-static const float32_t column4[]  = { 3, 2, 0.70, 0.20, 0.10 };
-static const float32_t column5[]  = { 3, 2, 0.15, 0.70, 0.15 };
-static const float32_t column6[]  = { 3, 2, 0.10, 0.30, 0.60 };
-static const float32_t column7[]  = { 3, 3, 0.10, 0.30, 0.60 };
-static const float32_t column8[]  = { 3, 4, 0.10, 0.30, 0.60 };
-static const float32_t column9[]  = { 3, 5, 0.10, 0.30, 0.60 };
-static const float32_t column10[] = { 3, 6, 0.10, 0.30, 0.60 };
-static const float32_t column11[] = { 3, 7, 0.10, 0.30, 0.60 };
-static const float32_t column12[] = { 3, 8, 0.10, 0.30, 0.60 };
-static const float32_t column13[] = { 3, 9, 0.10, 0.30, 0.60 };
-static const float32_t column14[] = { 5, 9, 0.10, 0.20, 0.30, 0.40, 0.40 };
-static const float32_t column15[] = { 6, 10, 0.10, 0.20, 0.30, 0.30, 0.30, 0.40 };*/
-
-/*static const float32_t column0[]  = { 1, 0, 1.0 };
-static const float32_t column1[]  = { 2, 0, 0.50, 0.50 };
-static const float32_t column2[]  = { 3, 0, 0.25, 0.25, 0.50 };
-static const float32_t column3[]  = { 3, 1, 0.25, 0.25, 0.50 };
-static const float32_t column4[]  = { 3, 2, 0.25, 0.25, 0.50 };
-static const float32_t column5[]  = { 4, 2, 0.15, 0.15, 0.30, 0.40 };
-static const float32_t column6[]  = { 4, 3, 0.15, 0.15, 0.30, 0.40 };
-static const float32_t column7[]  = { 4, 4, 0.15, 0.15, 0.30, 0.40 };
-static const float32_t column8[]  = { 5, 4, 0.10, 0.10, 0.20, 0.20, 0.40 };
-static const float32_t column9[]  = { 5, 5, 0.10, 0.10, 0.20, 0.20, 0.40 };
-static const float32_t column10[] = { 5, 6, 0.10, 0.10, 0.20, 0.20, 0.40 };
-static const float32_t column11[] = { 6, 6, 0.05, 0.05, 0.10, 0.10, 0.20, 0.50 };
-static const float32_t column12[] = { 6, 7, 0.05, 0.05, 0.10, 0.10, 0.20, 0.50 };
-static const float32_t column13[] = { 7, 7, 0.05, 0.05, 0.05, 0.05, 0.10, 0.30, 0.40 };
-static const float32_t column14[] = { 7, 8, 0.05, 0.05, 0.05, 0.05, 0.10, 0.30, 0.40 };
-static const float32_t column15[] = { 8, 8, 0.05, 0.05, 0.05, 0.05, 0.10, 0.20, 0.20, 0.30 };*/
-
-/*static const float32_t column0[]  = { 1, 0, 1.0 };
+static const float32_t column0[]  = { 1, 0, 1.0 };
 static const float32_t column1[]  = { 1, 1, 1.0 };
 static const float32_t column2[]  = { 1, 2, 1.0 };
 static const float32_t column3[]  = { 1, 3, 1.0 };
@@ -84,23 +50,6 @@ static const float32_t column4[]  = { 1, 4, 1.0 };
 static const float32_t column5[]  = { 1, 5, 1.0 };
 static const float32_t column6[]  = { 1, 6, 1.0 };
 static const float32_t column7[]  = { 1, 7, 1.0 };
-static const float32_t column8[]  = { 1, 8, 1.0 };
-static const float32_t column9[]  = { 1, 9, 1.0 };
-static const float32_t column10[] = { 1, 10, 1.0 };
-static const float32_t column11[] = { 1, 11, 1.0 };
-static const float32_t column12[] = { 1, 12, 1.0 };
-static const float32_t column13[] = { 1, 13, 1.0 };
-static const float32_t column14[] = { 1, 14, 1.0 };
-static const float32_t column15[] = { 1, 15, 1.0 };*/
-
-static const float32_t column0[]  = { 2, 0, 0.5, 0.5 };
-static const float32_t column1[]  = { 1, 2, 1.0 };
-static const float32_t column2[]  = { 1, 3, 1.0 };
-static const float32_t column3[]  = { 2, 4, 0.5, 0.5 };
-static const float32_t column4[]  = { 2, 5, 0.4, 0.6 };
-static const float32_t column5[]  = { 2, 6, 0.5, 0.5 };
-static const float32_t column6[]  = { 2, 7, 0.5, 0.5 };
-static const float32_t column7[]  = { 4, 8, 0.2, 0.4, 0.4, 0.2 };
 static const float32_t column8[]  = { 1, 8, 1.0 };
 static const float32_t column9[]  = { 1, 9, 1.0 };
 static const float32_t column10[] = { 1, 10, 1.0 };
@@ -121,11 +70,9 @@ static const uint32_t lowLevelColors[5] = { 0xD30DFF, 0x4E0FE8, 0x003AFF, 0x0CAE
 static const uint32_t mediumLevelColors[5] = { 0x2CFF0D, 0xBEE80F, 0xFFDC00, 0xE89F0C, 0xFF6C00 };
 static const uint32_t highLevelColors[5] = { 0xFF960D, 0xE84B00, 0xFF1400, 0xE80C88, 0xC800FF };
 
-uint32_t columnDivider[16];
 uint8_t dotCounter;
 uint8_t peak[16];
-float32_t columns[16][COLUMN_AVERAGE_FRAMES]; // Column levels for previous 10 frames
-float32_t maximumAverageLevel[16]; // Used for dynamically adjusting pseudo rolling averages for prior frames
+float32_t columns[16];
 
 // Two matrix boards of 8x8, tiled horizontally
 Matrix::Matrix()
@@ -189,11 +136,6 @@ void Matrix::initialize(AudioVisualizer pVisualizer) {
     lastTime = 0;
     lastBlink = millis();
     lastStateChange = millis();
-
-    uint8_t i;
-    for (i = 0; i < 16; i++) {
-        maximumAverageLevel[i] = 1;
-    }
 }
 
 void Matrix::drawBars() {
@@ -345,26 +287,23 @@ void Matrix::visualize() {
             volume += output[startBin + i] * data[i + 2];
         }
 
-        columns[x][frameIndex] = volume;
-        maximumLevel = columns[x][0];
-        for (i = 0; i < COLUMN_AVERAGE_FRAMES; i++) {
-            if (columns[x][i] > maximumLevel)
-                maximumLevel = columns[x][i];
-        }
-
-        maximumLevel = max(0.1, maximum * 0.8);
-
-        maximumAverageLevel[x] = (maximumAverageLevel[x] * 5 + maximumLevel) / 6.0f;
-
-        level = 8.0f * (columns[x][frameIndex]) / (maximumLevel);
-
-        //level = 10.0f * min(1, (volume / (max(0.5, maximum) * 0.96)));
+        columns[x] = volume;
+        maximumLevel = max(0.1, maximum * 1.1);
+        level = 8.0f * (columns[x]) / (maximumLevel);
 
         if (level < 0)      c = 0;
         else if (level > 8) c = 8;
-        else                c = (uint8_t)(floor(level));
+        else                c = (uint8_t)(round(level));
 
-        if (c > peak[x]) peak[x] = c;
+        if (c > peak[x]) {
+            if (c - peak[x] >= 4) {
+                peak[x] = c + 2;
+            } else if (c - peak[x] >= 2) {
+                peak[x] = c + 1;
+            } else {
+                peak[x] = c;
+            }
+        }
 
         if (peak[x] <= 0) {
             drawLine(x, 0, x, 7, Matrix::Color(0, 0, 0));
@@ -377,7 +316,7 @@ void Matrix::visualize() {
 
         uint32_t peakColor;
 
-        y = 8 - peak[x];
+        y = max(0, 8 - peak[x]);
         if (y < 2) {
             peakColor = mix(colorPosition, highLevelColors[colorIndex % 5], highLevelColors[(colorIndex + 1) % 5]);
             drawPixel(x, y, Matrix::Color((peakColor & 0xFF0000) >> 16, (peakColor & 0xFF00) >> 8, (peakColor & 0xFF)));
@@ -402,9 +341,8 @@ void Matrix::visualize() {
         }
     }
 
-    if (++frameIndex >= COLUMN_AVERAGE_FRAMES) frameIndex = 0;
-
-    if (++colorPosition == 0) {
+    colorPosition = colorPosition + 1;
+    if (colorPosition == 0) {
         colorIndex++;
     }
 }
