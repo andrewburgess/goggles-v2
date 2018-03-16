@@ -10,14 +10,25 @@
 #define TOTAL_STATES            5
 #define STATE_VISUALIZE         0
 #define VISUALIZE_DURATION      60000
-#define STATE_COLOR_SWIRL       1
+
+#define STATE_TEXT              1
+#define TEXT_DURATION           10000
+
+#define STATE_ST_PADDYS         2
+#define ST_PADDYS_DURATION      8000
+
+#define STATE_HAT               6
+#define HAT_DURATION            5000
+
+#define STATE_COLOR_SWIRL       10
 #define COLOR_SWIRL_DURATION    15000
-#define STATE_EYES              2
+
+#define STATE_EYES              11
 #define EYES_DURATION           10000
-#define STATE_TEXT              3
-#define TEXT_DURATION           8000
-#define STATE_HEART             4
+
+#define STATE_HEART             12
 #define HEART_DURATION          10000
+
 #define STATE_BEER              5
 #define BEER_DURATION           1000
 
@@ -26,6 +37,14 @@
 #define BEER_FRAMES 1
 const uint8_t *beerAnimation[] = {
     BEER, BEER
+};
+
+#define ST_PADDYS_FRAMES 4
+const uint8_t *stpaddysAnimation[] = {
+    BEER, HAT,
+    BEER, BEER,
+    HAT, BEER,
+    HAT, HAT    
 };
 
 #define COLOR_SWIRL_FRAMES 8
@@ -66,9 +85,13 @@ static const float32_t *columnData[] = {
                                         column12, column13, column14, column15
                                     };
 
-static const uint32_t lowLevelColors[5] = { 0xD30DFF, 0x4E0FE8, 0x003AFF, 0x0CAEE8, 0x00FFBC };
+/*static const uint32_t lowLevelColors[5] = { 0xD30DFF, 0x4E0FE8, 0x003AFF, 0x0CAEE8, 0x00FFBC };
 static const uint32_t mediumLevelColors[5] = { 0x2CFF0D, 0xBEE80F, 0xFFDC00, 0xE89F0C, 0xFF6C00 };
-static const uint32_t highLevelColors[5] = { 0xFF960D, 0xE84B00, 0xFF1400, 0xE80C88, 0xC800FF };
+static const uint32_t highLevelColors[5] = { 0xFF960D, 0xE84B00, 0xFF1400, 0xE80C88, 0xC800FF };*/
+
+static const uint32_t lowLevelColors[5] = { 0x044F00, 0x068200, 0x044F00, 0x068200, 0x044F00 };
+static const uint32_t mediumLevelColors[5] = { 0x068200, 0x32972D, 0x068200, 0x32972D, 0x068200 };
+static const uint32_t highLevelColors[5] = { 0x45CF3E, 0x09CF00, 0x45CF3E, 0x09CF00, 0x45CF3E };
 
 uint8_t dotCounter;
 uint8_t peak[16];
@@ -217,6 +240,10 @@ void Matrix::loop() {
         case STATE_VISUALIZE:
             stateDuration = VISUALIZE_DURATION;
             visualize();
+            break;
+        case STATE_ST_PADDYS:
+            stateDuration = ST_PADDYS_DURATION;
+            animate(stpaddysAnimation, ST_PADDYS_FRAMES, FRAME_DURATION * 150);
             break;
         case STATE_BEER:
             stateDuration = BEER_DURATION;
@@ -449,12 +476,13 @@ void Matrix::writeText() {
 
     lastTime = millis();
     setBrightness(192);
-    setTextColor(Matrix::Color(255, 0, 0));
+    setTextColor(Matrix::Color(0, 192, 0));
     setTextWrap(false);
 
     clear();
     setCursor(frameIndex, 0);
-    print(F("REZZ 4 EVER"));
+    //print(F("REZZ 4 EVER"));
+    print(F("HAPPY ST PATRICKS"));
     show();
 
     if (--frameIndex < -76) {
