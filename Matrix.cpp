@@ -7,15 +7,18 @@
 #include "gamma.h"
 #include "graphics.h"
 
-#define TOTAL_STATES            5
+#define TOTAL_STATES            4
 #define STATE_VISUALIZE         0
 #define VISUALIZE_DURATION      60000
 
 #define STATE_TEXT              1
-#define TEXT_DURATION           10000
+#define TEXT_DURATION           180000000
 
 #define STATE_ST_PADDYS         2
 #define ST_PADDYS_DURATION      8000
+
+#define STATE_HEART             3
+#define HEART_DURATION          6000
 
 #define STATE_HAT               6
 #define HAT_DURATION            5000
@@ -26,8 +29,13 @@
 #define STATE_EYES              11
 #define EYES_DURATION           10000
 
-#define STATE_HEART             12
-#define HEART_DURATION          10000
+#define NUMBER_OF_TEXTS         3
+String texts[] = {
+    String("HAPPY ST PATRICKS DAY"),
+    String("DRINK GREEN BEER"),
+    String("I LOVE COM TRUISE")
+};
+uint8_t currentText;
 
 #define STATE_BEER              5
 #define BEER_DURATION           1000
@@ -89,13 +97,14 @@ static const float32_t *columnData[] = {
 static const uint32_t mediumLevelColors[5] = { 0x2CFF0D, 0xBEE80F, 0xFFDC00, 0xE89F0C, 0xFF6C00 };
 static const uint32_t highLevelColors[5] = { 0xFF960D, 0xE84B00, 0xFF1400, 0xE80C88, 0xC800FF };*/
 
-static const uint32_t lowLevelColors[5] = { 0x044F00, 0x068200, 0x044F00, 0x068200, 0x044F00 };
-static const uint32_t mediumLevelColors[5] = { 0x068200, 0x32972D, 0x068200, 0x32972D, 0x068200 };
-static const uint32_t highLevelColors[5] = { 0x45CF3E, 0x09CF00, 0x45CF3E, 0x09CF00, 0x45CF3E };
+static const uint32_t lowLevelColors[5] = { 0x034000, 0x062900, 0x034000, 0x0A4200, 0x0A4500 };
+static const uint32_t mediumLevelColors[5] = { 0x067F00, 0x0A4200, 0x067F00, 0x0A4200, 0x0F6900 };
+static const uint32_t highLevelColors[5] = { 0x0CFF00, 0x0BE500, 0x0CFF00, 0x0CFF00, 0x09FC00 };
 
 uint8_t dotCounter;
 uint8_t peak[16];
 float32_t columns[16];
+bool forceChange = false;
 
 // Two matrix boards of 8x8, tiled horizontally
 Matrix::Matrix()
@@ -145,7 +154,7 @@ uint16_t Matrix::Color(uint8_t red, uint8_t green, uint8_t blue)
 
 void Matrix::initialize(AudioVisualizer pVisualizer) {
     visualizer = pVisualizer;
-    state = STATE_VISUALIZE;
+    state = STATE_TEXT;
 
     begin();
     setTextWrap(false);
@@ -159,6 +168,7 @@ void Matrix::initialize(AudioVisualizer pVisualizer) {
     lastTime = 0;
     lastBlink = millis();
     lastStateChange = millis();
+    currentText = 0;
 }
 
 void Matrix::drawBars() {
@@ -254,8 +264,8 @@ void Matrix::loop() {
             renderEyes();
             break;
         case STATE_TEXT:
-            stateDuration = VISUALIZE_DURATION;
-            visualize();
+            stateDuration = TEXT_DURATION;
+            writeText();
             break;
         case STATE_HEART:
             stateDuration = HEART_DURATION;
@@ -270,27 +280,28 @@ void Matrix::loop() {
             break;
     }
 
-    /*if (millis() - lastStateChange > stateDuration) {
+    if (millis() - lastStateChange > stateDuration || forceChange) {
         uint8_t shouldChange = random(max(1, 10000 - (millis() - lastStateChange)));
-        if (shouldChange == 0) {
+        if (shouldChange == 0 || forceChange) {
             colorIndex = 0;
             colorPosition = 0;
             frameIndex = 0;
+            forceChange = false;
             state = random(0, 255);
             if (state < 80) {
                 state = STATE_VISUALIZE;
             } else {
                 state = state % TOTAL_STATES;
             }
-            lastStateChange = millis();
+            lastStateChange = 0;
         }
-    }*/
+    }
 }
 
 void Matrix::visualize() {
     clear();
 
-    setBrightness(92);
+    setBrightness(156);
     drawBars();
 
     float32_t *data;
@@ -470,22 +481,32 @@ void Matrix::drawHearts() {
 }
 
 void Matrix::writeText() {
-    if (millis() - lastTime < 32) {
+    if (millis() - lastTime < 8) {
         return;
     }
 
     lastTime = millis();
-    setBrightness(192);
-    setTextColor(Matrix::Color(0, 192, 0));
+    setBrightness(224);
+    setTextColor(Matrix::Color(0, 255, 0));
     setTextWrap(false);
 
     clear();
     setCursor(frameIndex, 0);
     //print(F("REZZ 4 EVER"));
-    print(F("HAPPY ST PATRICKS"));
+    String str = String(texts[currentText]);
+    print(F(str.c_str()));
     show();
 
-    if (--frameIndex < -76) {
+    Serial.println(str.length());
+    int len = str.length();
+
+    if (--frameIndex < (len * -1 * 6)) {
         frameIndex = width();
+        currentText = random(0, NUMBER_OF_TEXTS);
+
+        uint8_t shouldChange = random(8);
+        if (shouldChange == 0) {
+            forceChange = true;
+        }
     }
 }

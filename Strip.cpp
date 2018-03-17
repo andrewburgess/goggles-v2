@@ -16,8 +16,32 @@ uint32_t Strip::Color(uint8_t red, uint8_t green, uint8_t blue)
     return ((uint32_t)green << 16) | ((uint32_t)red << 8) | blue;
 }
 
+static uint32_t mix(uint8_t weight, uint32_t startColor, uint32_t endColor) {
+    uint32_t startRed = (startColor & 0xFF0000) >> 16;
+    uint32_t startGreen = (startColor & 0xFF00) >> 8;
+    uint32_t startBlue = (startColor & 0xFF);
+
+    uint32_t endRed = (endColor & 0xFF0000) >> 16;
+    uint32_t endGreen = (endColor & 0xFF00) >> 8;
+    uint32_t endBlue = (endColor & 0xFF);
+
+    uint32_t mixedRed = floor(startRed * ((255.0f - weight) / 255.0f) + endRed * (weight / 255.0f));
+    uint32_t mixedGreen = floor(startGreen * ((255.0f - weight) / 255.0f) + endGreen * (weight / 255.0f));
+    uint32_t mixedBlue = floor(startBlue * ((255.0f - weight) / 255.0f) + endBlue * (weight / 255.0f));
+
+    uint32_t color = (
+        (mixedGreen << 16) +
+        (mixedRed << 8) +
+        mixedBlue
+    );
+
+    return color;
+};
+
 uint32_t Wheel(byte WheelPos) {
-    if(WheelPos < 85) {
+    return mix(WheelPos, 0x0CFF00, 0x03F800);
+
+    /*if(WheelPos < 85) {
         return Strip::Color(WheelPos * 3, 255 - WheelPos * 3, 0);
     } else if(WheelPos < 170) {
         WheelPos -= 85;
@@ -25,7 +49,7 @@ uint32_t Wheel(byte WheelPos) {
     } else {
         WheelPos -= 170;
         return Strip::Color(0, WheelPos * 3, 255 - WheelPos * 3);
-    }
+    }*/
 }
 
 void Strip::initialize(AudioVisualizer pVisualizer) {
